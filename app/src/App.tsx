@@ -5,10 +5,11 @@ import { BrowseScreen } from './screens/BrowseScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { usePreferences } from './lib/prefs';
+import { loadTimetable, getCourses } from './lib/data';
 
 type Tab = 'today' | 'week' | 'browse' | 'settings';
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
+const TABS: { id: Tab; label: string; icon: (props: { active: boolean }) => JSX.Element }[] = [
   { id: 'today', label: 'Today', icon: todayIcon },
   { id: 'week', label: 'Week', icon: weekIcon },
   { id: 'browse', label: 'Browse', icon: browseIcon },
@@ -59,12 +60,28 @@ function settingsIcon({ active }: { active: boolean }) {
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [courseValid, setCourseValid] = useState(true);
   const prefs = usePreferences();
 
-  // Check if onboarding is needed
+  // Check if onboarding is needed on mount
   useEffect(() => {
     if (!prefs.courseCode) {
       setShowOnboarding(true);
+    } else {
+      // Validate stored course exists in current data
+      loadTimetable()
+        .then((timetable) => {
+          const courses = getCourses(timetable);
+          const exists = courses.some((c) => c.code === prefs.courseCode);
+          setCourseValid(exists);
+          if (!exists) {
+            setShowOnboarding(true);
+          }
+        })
+        .catch(() => {
+          // If data load fails, assume course is valid (offline)
+          setCourseValid(true);
+        });
     }
   }, [prefs.courseCode]);
 
@@ -81,7 +98,7 @@ export function App() {
     return (
       <>
         <a href="#main" class="skip-link">Skip to main content</a>
-        <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+        <OnboardingScreen onComplete={() => setShowOnboarding(false)} recovery={!courseValid} />
       </>
     );
   }
