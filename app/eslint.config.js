@@ -11,7 +11,7 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     plugins: { preact },
     languageOptions: {
-      parserOptions: { ecmaFeatures: { jsx: true }, project: './tsconfig.json' },
+      parserOptions: { ecmaFeatures: { jsx: true } },
       globals: { ...globals.browser, ...globals.es2022 },
     },
     settings: { react: { version: '18' } },
