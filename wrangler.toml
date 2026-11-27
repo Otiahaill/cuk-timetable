@@ -1,0 +1,14 @@
+name = "cuk-timetable"
+compatibility_date = "2024-11-27"
+pages_build_output_dir = "app/dist"
+
+[build]
+command = "cd app && npm run build"
+watch_dir = "app"
+
+[vars]
+# Environment variables for the build (if needed)
+# NODE_ENV = "production"
+
+# Cloudflare Pages specific
+# The build runs in the repository root, so we cd into app first
