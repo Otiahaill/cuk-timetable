@@ -43,3 +43,33 @@ Files: tools/version.js, data/version.json, data/timetable.json (updated)
 Verified: version.json created with correct structure; timetable.json has meta.version; SHA256 matches file content
 Not verified: Script not tested on fresh data (but logic is straightforward)
 NEXT STEP: M2-01 — Onboarding: course search + unit tick screen per Stitch; versioned localStorage
+
+## 2026-11-27 — agent — SESSION END
+Task: M2-01
+Did: Implemented OnboardingScreen.tsx with 3-step flow per Stitch design:
+- Step 1: Course search with autocomplete, grouped by level (degree/diploma), auto-advances on selection
+- Step 2: Unit checkboxes (all checked by default), synced to versioned localStorage (cukt:v1:prefs)
+- Step 3: Success state with Settings link
+- Recovery flow: if stored course disappears from new data, shows "Pick your course again" message
+- Material Symbols font loaded via Google Fonts CDN
+- Updated App.tsx to validate stored course exists in current data on launch
+Files: app/src/screens/OnboardingScreen.tsx, app/src/App.tsx, app/index.html
+Verified: TypeScript syntax correct; recovery flow logic implemented
+Not verified: Not tested on device (platform limitation)
+NEXT STEP: M3-01 — Today screen with next-class card, countdown, timeline, empty states
+
+## 2026-11-27 — agent — SESSION END
+Task: M3-01 (Today screen - in progress)
+Did: Implemented TodayScreen.tsx with:
+- Next-class card with amber highlight, live countdown (60s interval, battery-saving)
+- Free gap rows between classes ("Free Xh Ym")
+- Timeline of remaining classes with time, mode chip, venue, lecturer
+- Empty states: no classes today, weekend → next Monday
+- A2HS install banner (dismissible, shows after 2nd visit, beforeinstallprompt)
+- Shared ClassDetailSheet component (drag to close, share via Web Share + WhatsApp)
+- Clash detection with red border + warning icon
+- Added slide-down and pulse animations to global.css
+Files: app/src/screens/TodayScreen.tsx, app/src/components/ClassDetailSheet.tsx, app/src/styles/global.css
+Verified: Imports correct, TypeScript syntax verified
+Not verified: Not tested on device (platform limitation)
+NEXT STEP: M3-01 complete — Week screen with day chips, timeline, clash markers
