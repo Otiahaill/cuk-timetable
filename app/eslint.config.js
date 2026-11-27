@@ -16,8 +16,6 @@ export default tseslint.config(
     },
     settings: { react: { version: '18' } },
     rules: {
-      ...preact.configs.recommended.rules,
-      ...preact.configs.all.rules,
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
     },
