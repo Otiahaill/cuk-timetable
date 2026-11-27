@@ -44,7 +44,6 @@ export function BrowseScreen() {
       return getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes);
     }
     return timetable.classes.filter((c) => !isUnitHidden(c.unit_code || ''));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timetable, prefs.courseCode, prefs.hiddenUnitCodes]);
 
   // Unique filter options from base classes
