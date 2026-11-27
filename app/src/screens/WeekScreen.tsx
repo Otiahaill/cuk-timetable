@@ -1,7 +1,6 @@
 /* Week screen — Day chips + timeline + clash markers + week-at-a-glance per Stitch */
 
 import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
-import { h } from 'preact';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse, groupClassesByDay, detectClashes, parseTime, formatTimeRange, formatTime } from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
@@ -11,7 +10,7 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
 export function WeekScreen() {
-  const { prefs, isUnitHidden } = usePreferences();
+  const { prefs } = usePreferences();
   const [timetable, setTimetable] = useState<TimetableData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

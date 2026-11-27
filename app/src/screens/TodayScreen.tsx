@@ -153,13 +153,6 @@ export function TodayScreen() {
     Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
-  const formatGap = (mins: number): string => {
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    const remaining = mins % 60;
-    return remaining > 0 ? `${hours}h ${remaining}m` : `${hours}h`;
-  };
-
   const freeGaps = (() => {
     const allClasses = todaysClasses;
     if (allClasses.length < 2) return [] as Array<{ start: number; end: number; label: string; between: [Class, Class] }>;

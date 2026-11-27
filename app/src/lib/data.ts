@@ -1,6 +1,6 @@
 /* Data loading & validation — CampusPulse */
 
-import type { TimetableData, Class, Course, VersionInfo, ChangesData, ChangeOverride } from './types';
+import type { TimetableData, Class, Course, VersionInfo, ChangesData } from './types';
 import { classKey, parseTime, dayIndex } from './types';
 
 const DATA_BASE = '/data';

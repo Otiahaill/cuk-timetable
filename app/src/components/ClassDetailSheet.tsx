@@ -1,7 +1,6 @@
 /* Shared class detail bottom sheet — used by Today, Week, Browse */
 
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { h } from 'preact';
 import type { Class } from '../lib/types';
 import { formatTimeRange } from '../lib/types';
 
@@ -18,14 +17,12 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
   const [startY, setStartY] = useState(0);
   const [translateY, setTranslateY] = useState(0);
 
-  // Close on backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
-  // Drag to close
   const handleTouchStart = (e: React.TouchEvent) => {
     setDragging(true);
     setStartY(e.touches[0].clientY);
@@ -50,7 +47,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
     setStartY(0);
   };
 
-  // Keyboard support
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,7 +56,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -74,8 +69,8 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
 
   const modeColors: Record<string, { bg: string; text: string }> = {
     'Face to face': { bg: 'var(--color-mode-face-to-face-container)', text: 'var(--color-mode-face-to-face)' },
-    'Online': { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
-    'Blended': { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
+    Online: { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
+    Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
   const modeStyle = modeColors[classData.mode] || { bg: 'var(--color-surface-container)', text: 'var(--color-on-surface)' };
@@ -113,7 +108,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
         </div>
 
         <div className="flex-1 overflow-y-auto p-gutter-lg gap-gutter-md flex flex-col">
-          {/* Time & Mode */}
           <div className="flex items-center justify-between gap-gutter-sm w-full">
             <span className="font-headline text-headline-md text-on-surface tabular-nums">
               {formatTimeRange(classData.start, classData.end)}
@@ -126,7 +120,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
             </span>
           </div>
 
-          {/* Venue */}
           <div className="flex items-start gap-gutter-md">
             <span className="material-symbols-outlined text-[24px] text-on-surface-variant mt-1" aria-hidden="true">location_on</span>
             <div className="flex-1">
@@ -135,7 +128,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
             </div>
           </div>
 
-          {/* Lecturer */}
           <div className="flex items-start gap-gutter-md">
             <span className="material-symbols-outlined text-[24px] text-on-surface-variant mt-1" aria-hidden="true">person</span>
             <div className="flex-1">
@@ -144,7 +136,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
             </div>
           </div>
 
-          {/* Class Size */}
           {classData.class_size !== null && (
             <div className="flex items-start gap-gutter-md">
               <span className="material-symbols-outlined text-[24px] text-on-surface-variant mt-1" aria-hidden="true">groups</span>
@@ -155,7 +146,6 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
             </div>
           )}
 
-          {/* Shared with groups */}
           {classData.groups.length > 0 && classData.groups[0] !== classData.course && (
             <div className="flex items-start gap-gutter-md">
               <span className="material-symbols-outlined text-[24px] text-on-surface-variant mt-1" aria-hidden="true">link</span>
@@ -168,14 +158,12 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
             </div>
           )}
 
-          {/* Note / Changed badge */}
           {classData.note && (
             <div className="p-gutter-md rounded-lg bg-amber-container text-on-amber-container border-l-4 border-amber">
               <p className="font-body text-body-md">{classData.note}</p>
             </div>
           )}
 
-          {/* Share button */}
           {onShare && (
             <button
               type="button"

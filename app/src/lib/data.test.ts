@@ -1,6 +1,6 @@
 /* Data layer tests — CampusPulse */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseTime,
   formatTime,
@@ -13,7 +13,6 @@ import {
   getClassesForCourse,
   getTodaysClasses,
   getNextClass,
-  getCurrentMinutesInNairobi,
   getMinutesUntilStart,
   formatMinutesUntil,
   groupClassesByDay,
@@ -22,7 +21,7 @@ import {
   filterClasses,
 } from './data';
 
-import type { TimetableData, Class, ChangesData } from './types';
+import type { TimetableData, Class } from './types';
 
 // Mock timetable data for testing
 const mockClass: Class = {
@@ -297,7 +296,7 @@ describe('Apply changes', () => {
 
   it('warns and ignores non-matching change', () => {
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const result = applyChanges(mockTimetable.classes, changes);
+    applyChanges(mockTimetable.classes, changes);
     expect(consoleWarn).toHaveBeenCalledWith(
       expect.stringContaining('Change matches no class')
     );

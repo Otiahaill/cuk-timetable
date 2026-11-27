@@ -117,7 +117,7 @@ export function BrowseScreen() {
   };
 
   // Filter chip component
-  const FilterChips = ({ label, options, type, multi = true }: { label: string; options: string[]; type: FilterType; multi?: boolean }) => (
+  const FilterChips = ({ label, options, type }: { label: string; options: string[]; type: FilterType }) => (
     <div className="flex items-center gap-gutter-sm px-gutter-sm">
       <span className="font-label text-label-sm text-on-surface-variant whitespace-nowrap">{label}</span>
       <div className="flex gap-gutter-sm overflow-x-auto pb-gutter-xs" role="group" aria-label={`${label} filters`}>
