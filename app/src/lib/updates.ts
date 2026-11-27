@@ -2,7 +2,7 @@
 
 import { loadVersion, loadTimetable, loadChanges, applyChanges } from './data';
 import { usePreferences } from './prefs';
-import type { TimetableData, VersionInfo, ChangesData } from './types';
+import type { TimetableData } from './types';
 
 const DATA_BASE = '/data';
 const UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
@@ -17,11 +17,9 @@ export interface UpdateResult {
 /** Check for updates and apply atomically */
 export async function checkAndApplyUpdate(): Promise<UpdateResult> {
   try {
-    // Load current version info
     const versionInfo = await loadVersion();
     const prefs = usePreferences();
 
-    // Check if newer version available
     const currentVersion = prefs.prefs.dataVersion;
     if (currentVersion === versionInfo.version) {
       return {
@@ -32,10 +30,8 @@ export async function checkAndApplyUpdate(): Promise<UpdateResult> {
       };
     }
 
-    // Load new timetable
     const newTimetable = await loadTimetable();
 
-    // Load and apply changes overlay
     let hadChanges = false;
     let finalTimetable = newTimetable;
 
@@ -52,10 +48,8 @@ export async function checkAndApplyUpdate(): Promise<UpdateResult> {
       // changes.json is optional
     }
 
-    // Update preferences with new version
     prefs.setDataVersion(versionInfo.version);
 
-    // Notify app of new data (via storage event or custom event)
     window.dispatchEvent(new CustomEvent('cukt:data-updated', {
       detail: { timetable: finalTimetable, version: versionInfo.version },
     }));
@@ -85,7 +79,6 @@ export function startPeriodicUpdateCheck(onUpdate?: (result: UpdateResult) => vo
     }
   }, UPDATE_CHECK_INTERVAL);
 
-  // Return cleanup function
   return () => window.clearInterval(intervalId);
 }
 
@@ -110,9 +103,6 @@ export function subscribeToUpdates(callback: (timetable: TimetableData, version:
 export async function validateUpdatedData(): Promise<boolean> {
   try {
     const versionInfo = await loadVersion();
-    const timetable = await loadTimetable();
-
-    // Verify SHA256 matches
     const response = await fetch(`${DATA_BASE}/timetable.json?v=${Date.now()}`);
     const buffer = await response.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);

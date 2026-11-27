@@ -1,14 +1,13 @@
 /* Onboarding screen — 3-step flow per Stitch design */
 
 import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
-import { h, ComponentChildren } from 'preact';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse } from '../lib/data';
 import type { Course, Class, TimetableData } from '../lib/types';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
-  recovery?: boolean; // true when stored course no longer exists in new data
+  recovery?: boolean;
 }
 
 type Step = 1 | 2 | 3;
@@ -74,7 +73,6 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
     (courseCode: string) => {
       if (!timetable) return;
 
-      // Get units for this course
       const classes = getClassesForCourse(timetable, courseCode, []);
       const unitMap = new Map<string, string>();
 
@@ -110,7 +108,6 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
   // Proceed to next step or complete
   const handleNextStep = useCallback(() => {
     if (step === 1) {
-      // Should not happen - course selection auto-advances
       setStep(2);
     } else if (step === 2) {
       if (selectedCourse) {
@@ -311,7 +308,18 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
         <button
           id="next-step-btn"
           type="button"
-          onClick={handleNextStep}
+          onClick={() => {
+            if (step === 1) {
+              setStep(2);
+            } else if (step === 2) {
+              if (selectedCourse) {
+                setCourseCode(selectedCourse);
+                setStep(3);
+              }
+            } else {
+              onComplete();
+            }
+          }}
           disabled={disabled}
           className={`w-full inline-flex items-center justify-center min-h-[48px] px-gutter-xl rounded-lg font-label text-label-lg active:opacity-80 transition-opacity ${
             disabled
@@ -319,7 +327,7 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
               : 'bg-primary text-on-primary'
           }`}
         >
-          <span id="next-step-label">{labels[step]}</span>
+          <span id="next-step-label">{labels[step as keyof typeof labels]}</span>
         </button>
       </footer>
     );

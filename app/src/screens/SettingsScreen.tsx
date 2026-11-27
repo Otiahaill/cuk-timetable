@@ -1,11 +1,9 @@
 /* Settings screen — Full page per Stitch design */
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
-import { h } from 'preact';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, loadVersion, loadChanges, applyChanges, getClassesForCourse } from '../lib/data';
 import type { TimetableData, Class } from '../lib/types';
-import { ClassDetailSheet } from '../components/ClassDetailSheet';
 
 export function SettingsScreen() {
   const { prefs, setTheme, setCourseCode, toggleUnitHidden, isUnitHidden, setDataVersion } = usePreferences();
@@ -17,7 +15,6 @@ export function SettingsScreen() {
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [showCourseUnits, setShowCourseUnits] = useState(false);
   const [courseUnits, setCourseUnits] = useState<Array<{ code: string | null; name: string }>>([]);
-  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
 
   // Load timetable
   useEffect(() => {
@@ -59,7 +56,6 @@ export function SettingsScreen() {
       setUpdateAvailable(isNewer);
 
       if (isNewer) {
-        // Apply atomic update
         const newTimetable = await loadTimetable();
         const changes = await loadChanges();
         let finalTimetable = newTimetable;
@@ -89,7 +85,6 @@ export function SettingsScreen() {
     const nextTheme = themes[(currentIndex + 1) % themes.length];
     setTheme(nextTheme);
 
-    // Apply immediately
     if (nextTheme === 'dark' || (nextTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
@@ -144,7 +139,6 @@ export function SettingsScreen() {
   const resetCourse = useCallback(() => {
     if (confirm('This will reset your course and units. Continue?')) {
       setCourseCode(null);
-      // The App component will show onboarding
       window.location.reload();
     }
   }, [setCourseCode]);
@@ -190,7 +184,7 @@ export function SettingsScreen() {
             role="switch"
             aria-checked={prefs.theme === 'dark' || (prefs.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)}
             onClick={handleThemeToggle}
-            className={`toggle ${prefs.theme === 'dark' || (prefs.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? '' : ''}`}
+            className="toggle"
             aria-label={`Dark theme, currently ${themeLabels[prefs.theme]}`}
           />
         </div>

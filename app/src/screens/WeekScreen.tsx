@@ -67,8 +67,8 @@ export function WeekScreen() {
   // Mode chip styles
   const modeColors: Record<string, { bg: string; text: string }> = {
     'Face to face': { bg: 'var(--color-mode-face-to-face-container)', text: 'var(--color-mode-face-to-face)' },
-    'Online': { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
-    'Blended': { bg: 'var(--color-mode-blended-container'), text: 'var(--color-mode-blended)' },
+    Online: { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
+    Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
   // Check if a class has a clash

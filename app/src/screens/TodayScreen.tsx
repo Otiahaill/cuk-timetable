@@ -1,7 +1,6 @@
 /* Today screen — Next-class card + timeline per Stitch design */
 
-import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
-import { h } from 'preact';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse, getTodaysClasses, getNextClass, getCurrentMinutesInNairobi, formatTimeRange, formatMinutesUntil, detectClashes } from '../lib/data';
 import { parseTime, formatTime } from '../lib/types';
@@ -9,7 +8,7 @@ import type { Class, TimetableData } from '../lib/types';
 import { ClassDetailSheet } from '../components/ClassDetailSheet';
 
 export function TodayScreen() {
-  const { prefs, isUnitHidden } = usePreferences();
+  const { prefs } = usePreferences();
   const [timetable, setTimetable] = useState<TimetableData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +52,6 @@ export function TodayScreen() {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      // Store the event for later use
       (window as any).deferredPrompt = e;
       setShowA2HS(true);
     };
@@ -66,12 +64,10 @@ export function TodayScreen() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     if (isStandalone) {
       setShowA2HS(false);
     } else {
-      // Show after 2nd visit (simple localStorage check)
       const visits = parseInt(localStorage.getItem('cukt:visits') || '0', 10);
       localStorage.setItem('cukt:visits', String(visits + 1));
       if (visits >= 1) {
@@ -106,11 +102,7 @@ export function TodayScreen() {
   const todaysClasses = timetable && prefs.courseCode
     ? getTodaysClasses(
         getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes)
-      ).sort((a, b) => {
-        const aStart = a.start;
-        const bStart = b.start;
-        return aStart.localeCompare(bStart);
-      })
+      ).sort((a, b) => a.start.localeCompare(b.start))
     : [];
 
   // Get next class
@@ -147,7 +139,7 @@ export function TodayScreen() {
   const getNextMonday = () => {
     const d = new Date(nairobiTime);
     const day = d.getDay();
-    const daysUntilMonday = day === 0 ? 1 : 8 - day; // Sun=1, Sat=2
+    const daysUntilMonday = day === 0 ? 1 : 8 - day;
     d.setDate(d.getDate() + daysUntilMonday);
     return d;
   };
@@ -157,23 +149,10 @@ export function TodayScreen() {
   // Mode chip styles
   const modeColors: Record<string, { bg: string; text: string }> = {
     'Face to face': { bg: 'var(--color-mode-face-to-face-container)', text: 'var(--color-mode-face-to-face)' },
-    'Online': { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
-    'Blended': { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
+    Online: { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
+    Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
-  // Get free gaps between classes
-  const getFreeGaps = (classes: Class[]): Array<{ start: number; end: number; label: string }> => {
-    if (classes.length < 2) return [];
-    const gaps: Array<{ start: number; end: number; label: string }> = [];
-    for (let i = 0; i < classes.length - 1; i++) {
-      const currentEnd = parseInt(classes[i].end.match(/(\d+):(\d+)(AM|PM)/i) ? '0' : '0', 10); // We'll use parseTime from types
-      // Actually use the imported function
-    }
-    return gaps;
-  };
-
-  // We need parseTime here - import from types
-  // For now, inline the logic
   const formatGap = (mins: number): string => {
     if (mins < 60) return `${mins}m`;
     const hours = Math.floor(mins / 60);
@@ -189,11 +168,11 @@ export function TodayScreen() {
       const currentEnd = parseTime(allClasses[i].end);
       const nextStart = parseTime(allClasses[i + 1].start);
       const gap = nextStart - currentEnd;
-      if (gap > 30) { // Only show gaps > 30 minutes
+      if (gap > 30) {
         gaps.push({
           start: currentEnd,
           end: nextStart,
-          label: `Free ${formatGap(gap)}`,
+          label: `Free ${gap < 60 ? `${gap}m` : `${Math.floor(gap / 60)}h ${gap % 60 > 0 ? `${gap % 60}m` : ''}`}`,
           between: [allClasses[i], allClasses[i + 1]],
         });
       }
@@ -237,7 +216,6 @@ export function TodayScreen() {
   }
 
   const isBeforeFirstClass = nextClass !== null && nowMinutes < parseTime(nextClass.start);
-  const isAfterLastClass = nextClass === null && todaysClasses.length > 0;
   const hasNoClassesToday = todaysClasses.length === 0;
 
   return (
@@ -273,48 +251,48 @@ export function TodayScreen() {
       {nextClass && (
         <article className="mb-gutter-lg p-gutter-lg rounded-xl relative overflow-hidden px-page-margin"
           style={{ background: 'linear-gradient(135deg, var(--color-amber-container) 0%, var(--color-amber-container) 100%)', border: '2px solid var(--color-amber)' }}>
-          <div className="flex items-start justify-between gap-gutter-md">
-            <div className="flex-1">
-              <div className="flex items-center gap-gutter-xs mb-gutter-xs">
-                <span className="font-label text-label-sm text-on-amber-container bg-amber px-gutter-sm py-gutter-xs rounded-full">
-                  Next
+        <div className="flex items-start justify-between gap-gutter-md">
+          <div className="flex-1">
+            <div className="flex items-center gap-gutter-xs mb-gutter-xs">
+              <span className="font-label text-label-sm text-on-amber-container bg-amber px-gutter-sm py-gutter-xs rounded-full">
+                Next
+              </span>
+              {isBeforeFirstClass && (
+                <span className="font-label text-label-sm text-on-amber-container" id="next-countdown">
+                  Starts in {formatMinutesUntil(parseTime(nextClass.start) - nowMinutes)}
                 </span>
-                {isBeforeFirstClass && (
-                  <span className="font-label text-label-sm text-on-amber-container" id="next-countdown">
-                    Starts in {formatMinutesUntil(parseTime(nextClass.start) - nowMinutes)}
-                  </span>
-                )}
-                {!isBeforeFirstClass && (
-                  <span className="font-label text-label-sm text-on-amber-container bg-amber px-gutter-sm py-gutter-xs rounded-full animate-pulse">
-                    Now
-                  </span>
-                )}
-              </div>
-              <h2 className="font-headline text-headline-md text-on-amber-container text-balance">
-                {nextClass.unit_code ? `${nextClass.unit_code} · ${nextClass.unit_name}` : nextClass.unit_name}
-              </h2>
-              <p className="font-body text-body-md text-on-amber-container mt-gutter-xs">
-                {formatTimeRange(nextClass.start, nextClass.end)}
-              </p>
+              )}
+              {!isBeforeFirstClass && (
+                <span className="font-label text-label-sm text-on-amber-container bg-amber px-gutter-sm py-gutter-xs rounded-full animate-pulse">
+                  Now
+                </span>
+              )}
             </div>
-            <span
-              className="inline-flex items-center px-gutter-md py-gutter-xs rounded-full font-label text-label-sm shrink-0"
-              style={{ backgroundColor: modeColors[nextClass.mode]?.bg || 'var(--color-surface-container)', color: modeColors[nextClass.mode]?.text || 'var(--color-on-surface)' }}
-            >
-              {nextClass.mode}
-            </span>
+            <h2 className="font-headline text-headline-md text-on-amber-container text-balance">
+              {nextClass.unit_code ? `${nextClass.unit_code} · ${nextClass.unit_name}` : nextClass.unit_name}
+            </h2>
+            <p className="font-body text-body-md text-on-amber-container mt-gutter-xs">
+              {formatTimeRange(nextClass.start, nextClass.end)}
+            </p>
           </div>
-          <div className="flex items-center justify-between gap-gutter-md mt-gutter-md pt-gutter-md border-t border-amber/30">
-            <div className="flex items-center gap-gutter-sm text-on-amber-container">
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">location_on</span>
-              <span className="font-body text-body-md">{nextClass.venue}</span>
-            </div>
-            <div className="flex items-center gap-gutter-sm text-on-amber-container">
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">person</span>
-              <span className="font-body text-body-md">{nextClass.lecturer}</span>
-            </div>
+          <span
+            className="inline-flex items-center px-gutter-md py-gutter-xs rounded-full font-label text-label-sm shrink-0"
+            style={{ backgroundColor: modeColors[nextClass.mode]?.bg || 'var(--color-surface-container)', color: modeColors[nextClass.mode]?.text || 'var(--color-on-surface)' }}
+          >
+            {nextClass.mode}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-gutter-md mt-gutter-md pt-gutter-md border-t border-amber/30">
+          <div className="flex items-center gap-gutter-sm text-on-amber-container">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">location_on</span>
+            <span className="font-body text-body-md">{nextClass.venue}</span>
           </div>
-        </article>
+          <div className="flex items-center gap-gutter-sm text-on-amber-container">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">person</span>
+            <span className="font-body text-body-md">{nextClass.lecturer}</span>
+          </div>
+        </div>
+      </article>
       )}
 
       {/* Empty States */}
@@ -343,11 +321,9 @@ export function TodayScreen() {
       {/* Timeline: Free gaps + Remaining classes */}
       {!hasNoClassesToday && !isWeekend && (
         <section className="flex-1 flex flex-col gap-gutter-md px-page-margin" aria-label="Today's schedule">
-          {/* Interleave free gaps and classes */}
           {(() => {
             const items: Array<{ type: 'gap' | 'class'; data: Class | { label: string; between: [Class, Class] }; start: number }> = [];
 
-            // Add free gaps
             for (const gap of freeGaps) {
               items.push({
                 type: 'gap',
@@ -356,7 +332,6 @@ export function TodayScreen() {
               });
             }
 
-            // Add remaining classes
             for (const cls of remainingClasses) {
               items.push({
                 type: 'class',
@@ -365,7 +340,6 @@ export function TodayScreen() {
               });
             }
 
-            // Sort by time
             items.sort((a, b) => a.start - b.start);
 
             return items.map((item, idx) => {
@@ -430,7 +404,7 @@ export function TodayScreen() {
         isOpen={!!selectedClass}
         onClose={() => setSelectedClass(null)}
         onShare={(cls) => {
-          const text = `${cls.unit_code ? cls.unit_code + ' · ' : ''}${cls.unit_name} ${formatTimeRange(cls.start, cls.end)} at ${cls.venue} — CUK Timetable`;
+          const text = `${cls.unit_code ? cls.unit_code + ' · ' : ''}${cls.unit_name} ${formatTimeRange(cls.start, cls.end)} at {cls.venue} — CUK Timetable`;
           if (navigator.share) {
             navigator.share({ title: cls.unit_name, text }).catch(() => {});
           } else {

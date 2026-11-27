@@ -1,7 +1,6 @@
 /* Browse screen — Search + filter chips + results per Stitch */
 
-import { useState, useEffect, useMemo, useCallback } from 'preact/hooks';
-import { h } from 'preact';
+import { useState, useEffect, useMemo } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse, searchClasses, filterClasses, parseTime, formatTimeRange, formatTime } from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
@@ -43,7 +42,6 @@ export function BrowseScreen() {
     if (prefs.courseCode) {
       return getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes);
     }
-    // If no course selected, show all classes (for browsing all)
     return timetable.classes.filter((c) => !isUnitHidden(c.unit_code || ''));
   }, [timetable, prefs.courseCode, prefs.hiddenUnitCodes, isUnitHidden]);
 
@@ -73,12 +71,10 @@ export function BrowseScreen() {
   const filteredClasses = useMemo(() => {
     let result = baseClasses;
 
-    // Search
     if (searchQuery.trim()) {
       result = searchClasses(result, searchQuery);
     }
 
-    // Filters
     const filters: { mode?: string; day?: string; venue?: string; level?: string } = {};
     if (selectedFilters.mode) filters.mode = selectedFilters.mode;
     if (selectedFilters.day) filters.day = selectedFilters.day;
@@ -87,7 +83,6 @@ export function BrowseScreen() {
 
     result = filterClasses(result, filters);
 
-    // Sort by day then time
     result.sort((a, b) => {
       const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
       const dayDiff = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
@@ -99,17 +94,17 @@ export function BrowseScreen() {
   }, [baseClasses, searchQuery, selectedFilters]);
 
   // Toggle filter
-  const toggleFilter = useCallback((type: FilterType, value: string) => {
+  const toggleFilter = (type: FilterType, value: string) => {
     setSelectedFilters((prev) => ({
       ...prev,
       [type]: prev[type] === value ? null : value,
     }));
-  }, []);
+  };
 
   // Clear all filters
-  const clearFilters = useCallback(() => {
+  const clearFilters = () => {
     setSelectedFilters({ mode: null, day: null, venue: null, level: null });
-  }, []);
+  };
 
   // Check if any filters active
   const hasActiveFilters = Object.values(selectedFilters).some((v) => v !== null);
@@ -117,8 +112,8 @@ export function BrowseScreen() {
   // Mode chip styles
   const modeColors: Record<string, { bg: string; text: string }> = {
     'Face to face': { bg: 'var(--color-mode-face-to-face-container)', text: 'var(--color-mode-face-to-face)' },
-    'Online': { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
-    'Blended': { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
+    Online: { bg: 'var(--color-mode-online-container)', text: 'var(--color-mode-online)' },
+    Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
   // Filter chip component
@@ -244,13 +239,12 @@ export function BrowseScreen() {
           </div>
         ) : (
           filteredClasses.map((cls, idx) => {
-            const isClash = false; // Clash detection not needed in browse view
             return (
               <button
                 key={`${cls.id}-${idx}`}
                 type="button"
                 onClick={() => setSelectedClass(cls)}
-                className={`card p-gutter-md w-full text-left flex items-center gap-gutter-md active:opacity-80 transition-opacity mb-gutter-sm ${isClash ? 'border-2 border-error relative' : ''}`}
+                className="card p-gutter-md w-full text-left flex items-center gap-gutter-md active:opacity-80 transition-opacity mb-gutter-sm"
                 aria-label={`${cls.unit_name} on ${cls.day} at ${formatTimeRange(cls.start, cls.end)}`}
               >
                 <div className="flex flex-col items-start justify-center min-w-[72px] shrink-0">
@@ -282,7 +276,7 @@ export function BrowseScreen() {
                   {cls.mode}
                 </span>
               </button>
-            );
+            )
           })
         )}
       </section>
