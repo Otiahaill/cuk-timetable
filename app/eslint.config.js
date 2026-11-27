@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import preact from 'eslint-plugin-preact';
 import prettier from 'eslint-config-prettier';
+import globals from 'globals';
 
 export default tseslint.config(
   js.configs.recommended,
@@ -11,6 +12,7 @@ export default tseslint.config(
     plugins: { preact },
     languageOptions: {
       parserOptions: { ecmaFeatures: { jsx: true }, project: './tsconfig.json' },
+      globals: { ...globals.browser, ...globals.es2022 },
     },
     settings: { react: { version: '18' } },
     rules: {
