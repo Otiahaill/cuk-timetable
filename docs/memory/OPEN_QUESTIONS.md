@@ -1,0 +1,4 @@
+- Q-001 (blocking? no) Does the S / SSP course-code suffix mean school-based/special-programme cohorts? Ask Brian; affects Browse grouping labels.
+- Q-002 (blocking? no) Preferred framework: vanilla JS vs Preact? Provisional: Preact if components get >10, else vanilla.
+- Q-003 (blocking? no) App name/branding and domain? Provisional: "CUK Timetable", host default subdomain.
+- Q-004 (blocking? yes for M8) Is CUK/administration aware of this app? Should the footer say "unofficial"? Provisional: label "Unofficial — based on the published timetable".

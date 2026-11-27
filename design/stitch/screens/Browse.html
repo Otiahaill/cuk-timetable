@@ -1,0 +1,294 @@
+<!DOCTYPE html><html lang="en" class="dark"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0F1510">
+  <title>Browse — CampusPulse</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'light-primary': '#00652C',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#15803D',
+        'light-on-primary-container': '#D3FFD5',
+        'light-secondary': '#436648',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#C4EDC6',
+        'light-on-secondary-container': '#14371D',
+        'light-amber': '#B45309',
+        'light-on-amber': '#FFFFFF',
+        'light-amber-container': '#FEF3C7',
+        'light-on-amber-container': '#78350F',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F6FBF2',
+        'light-on-background': '#181D17',
+        'light-surface': '#F6FBF2',
+        'light-surface-dim': '#D6DCD3',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F0F5EC',
+        'light-surface-container': '#EAEFE6',
+        'light-surface-container-high': '#E4EAE1',
+        'light-surface-container-highest': '#DFE4DB',
+        'light-on-surface': '#181D17',
+        'light-surface-variant': '#DAE6D7',
+        'light-on-surface-variant': '#3F493F',
+        'light-outline': '#566156',
+        'light-outline-variant': '#BECABC',
+        'light-inverse-surface': '#2C322C',
+        'light-inverse-on-surface': '#EDF2E9',
+        'light-inverse-primary': '#79DB8D',
+        'dark-primary': '#79DB8D',
+        'dark-on-primary': '#003916',
+        'dark-primary-container': '#15803D',
+        'dark-on-primary-container': '#D3FFD5',
+        'dark-secondary': '#A9D0AB',
+        'dark-on-secondary': '#14371D',
+        'dark-secondary-container': '#2E5134',
+        'dark-on-secondary-container': '#D2FBD3',
+        'dark-amber': '#FBBF24',
+        'dark-on-amber': '#291800',
+        'dark-amber-container': '#452B00',
+        'dark-on-amber-container': '#FDE68A',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#0F1510',
+        'dark-on-background': '#DFE4DB',
+        'dark-surface': '#0F1510',
+        'dark-surface-dim': '#0F1510',
+        'dark-surface-bright': '#353B34',
+        'dark-surface-container-lowest': '#0A0F0A',
+        'dark-surface-container-low': '#181D17',
+        'dark-surface-container': '#1B211B',
+        'dark-surface-container-high': '#262B26',
+        'dark-surface-container-highest': '#313630',
+        'dark-on-surface': '#DFE4DB',
+        'dark-surface-variant': '#3F493F',
+        'dark-on-surface-variant': '#BECABC',
+        'dark-outline': '#889487',
+        'dark-outline-variant': '#3F493F',
+        'dark-inverse-surface': '#DFE4DB',
+        'dark-inverse-on-surface': '#2C322C',
+        'dark-inverse-primary': '#006D30',
+      },
+      borderRadius: {
+        'sm': '8px',
+        'DEFAULT': '12px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '24px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '16px',
+      },
+      fontFamily: {
+        'headline': ['"Space Grotesk"', 'sans-serif'],
+        'title': ['"Geist"', 'sans-serif'],
+        'body': ['"Geist"', 'sans-serif'],
+        'label': ['"Geist"', 'sans-serif'],
+      },
+      fontSize: {
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.25px', fontWeight: '600' }],
+        'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '-0.15px', fontWeight: '600' }],
+        'title-lg': ['18px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-lg': ['18px', { lineHeight: '26px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['16px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'label-md': ['14px', { lineHeight: '18px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.2px', fontWeight: '600' }],
+      },
+      transitionDuration: {
+        'state-change': '100ms',
+        'surface-enter': '220ms',
+        'surface-exit': '150ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'surface-exit': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'surface-exit': 'cubic-bezier(0.3, 0, 1, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&amp;family=Geist:wght@400;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>.material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }</style>
+</head>
+<body class="bg-light-background dark:bg-dark-background text-light-on-background dark:text-dark-on-background font-body antialiased">
+  <div class="max-w-[430px] mx-auto min-h-[884px] flex flex-col bg-light-surface dark:bg-dark-surface text-light-on-surface dark:text-dark-on-surface relative" data-stitch-vh="min-h-[884px]===min-h-screen">
+
+    <!-- Pinned Search Bar & Horizontal Filter Chips -->
+    <header class="sticky top-0 z-20 bg-light-surface dark:bg-dark-surface border-b border-light-outline-variant dark:border-dark-outline-variant px-page-margin pt-gutter-md pb-gutter-md flex flex-col gap-gutter-md">
+      <h1 data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface dark:text-dark-on-surface">Browse units</h1>
+
+      <form data-component-id="searchbar-standard" data-component-type="searchbar" data-component-variant="standard" role="search" onsubmit="event.preventDefault()" class="flex items-center w-full min-h-[48px] px-gutter-md rounded-lg bg-light-surface-container-high dark:bg-dark-surface-container-high border border-light-outline-variant dark:border-dark-outline-variant focus-within:border-light-primary dark:focus-within:border-dark-primary">
+        <span class="material-symbols-outlined text-[22px] text-light-on-surface-variant dark:text-dark-on-surface-variant mr-gutter-sm" aria-hidden="true">search</span>
+        <input id="browse-search" type="search" aria-label="Search units, venues, or lecturers" placeholder="Search unit, venue, or lecturer..." oninput="filterBrowse()" class="w-full bg-transparent border-0 p-0 text-body-md text-light-on-surface dark:text-dark-on-surface placeholder:text-light-outline dark:placeholder:text-dark-outline focus:ring-0">
+      </form>
+
+      <!-- Horizontally Scrolling Filter Chips (Day, Mode, Venue) -->
+      <div class="flex items-center gap-gutter-sm overflow-x-auto pb-gutter-xs" role="group" aria-label="Filter classes">
+        <button type="button" data-filter="all" onclick="setFilter(&#39;all&#39;)" aria-pressed="true" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary font-label text-label-md whitespace-nowrap">All</button>
+        <button type="button" data-filter="In-person" onclick="setFilter(&#39;In-person&#39;)" aria-pressed="false" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap">In-person</button>
+        <button type="button" data-filter="Online" onclick="setFilter(&#39;Online&#39;)" aria-pressed="false" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap">Online</button>
+        <button type="button" data-filter="Thu" onclick="setFilter(&#39;Thu&#39;)" aria-pressed="false" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap">Thu</button>
+        <button type="button" data-filter="Lab 4" onclick="setFilter(&#39;Lab 4&#39;)" aria-pressed="false" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap">Lab 4</button>
+        <button type="button" data-filter="LT 2B" onclick="setFilter(&#39;LT 2B&#39;)" aria-pressed="false" class="filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap">LT 2B</button>
+      </div>
+    </header>
+
+    <!-- Results List -->
+    <main id="browse-results" class="flex-1 px-page-margin pt-gutter-lg pb-[88px] flex flex-col gap-gutter-md">
+      <!-- Results rendered inline + filterable via JS -->
+      <button type="button" onclick="openSheet(&#39;Mon 09:00 – 11:00&#39;, &#39;CSC 301 · Data Structures&#39;, &#39;LT 2B · Dr. Amina Okafor&#39;, &#39;In-person&#39;)" class="browse-card w-full text-left p-gutter-lg rounded-lg bg-light-surface-container-low dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant flex flex-col gap-gutter-sm active:opacity-80" data-meta="Mon In-person LT 2B CSC 301 Data Structures Amina Okafor">
+        <header class="flex items-center justify-between gap-gutter-sm w-full">
+          <span data-design-text-token="title-lg" class="font-headline text-title-lg text-light-on-surface dark:text-dark-on-surface tabular-nums">Mon 09:00 – 11:00</span>
+          <span data-design-text-token="label-sm" class="px-gutter-sm py-gutter-xs rounded-full bg-light-secondary-container dark:bg-dark-secondary-container text-light-on-secondary-container dark:text-dark-on-secondary-container font-label text-label-sm">In-person</span>
+        </header>
+        <div>
+          <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface">CSC 301 · Data Structures</h2>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant dark:text-dark-on-surface-variant">LT 2B · Dr. Amina Okafor</p>
+        </div>
+      </button>
+
+      <button type="button" onclick="openSheet(&#39;Thu 11:30 – 13:00&#39;, &#39;CSC 305 · Operating Systems&#39;, &#39;Lab 4 · Prof. David Mensah&#39;, &#39;In-person&#39;)" class="browse-card w-full text-left p-gutter-lg rounded-lg bg-light-surface-container-low dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant flex flex-col gap-gutter-sm active:opacity-80" data-meta="Thu In-person Lab 4 CSC 305 Operating Systems David Mensah">
+        <header class="flex items-center justify-between gap-gutter-sm w-full">
+          <span data-design-text-token="title-lg" class="font-headline text-title-lg text-light-on-surface dark:text-dark-on-surface tabular-nums">Thu 11:30 – 13:00</span>
+          <span data-design-text-token="label-sm" class="px-gutter-sm py-gutter-xs rounded-full bg-light-secondary-container dark:bg-dark-secondary-container text-light-on-secondary-container dark:text-dark-on-secondary-container font-label text-label-sm">In-person</span>
+        </header>
+        <div>
+          <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface">CSC 305 · Operating Systems</h2>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant dark:text-dark-on-surface-variant">Lab 4 · Prof. David Mensah</p>
+        </div>
+      </button>
+
+      <button type="button" onclick="openSheet(&#39;Thu 16:30 – 18:00&#39;, &#39;SE 312 · Software Testing&#39;, &#39;Zoom · Ms. Priya Nair&#39;, &#39;Online&#39;)" class="browse-card w-full text-left p-gutter-lg rounded-lg bg-light-surface-container-low dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant flex flex-col gap-gutter-sm active:opacity-80" data-meta="Thu Online Zoom SE 312 Software Testing Priya Nair">
+        <header class="flex items-center justify-between gap-gutter-sm w-full">
+          <span data-design-text-token="title-lg" class="font-headline text-title-lg text-light-on-surface dark:text-dark-on-surface tabular-nums">Thu 16:30 – 18:00</span>
+          <span data-design-text-token="label-sm" class="px-gutter-sm py-gutter-xs rounded-full bg-light-surface-container-high dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-sm">Online</span>
+        </header>
+        <div>
+          <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface">SE 312 · Software Testing</h2>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant dark:text-dark-on-surface-variant">Zoom · Ms. Priya Nair</p>
+        </div>
+      </button>
+
+      <button type="button" onclick="openSheet(&#39;Tue 11:00 – 12:30&#39;, &#39;MAT 204 · Linear Algebra&#39;, &#39;Hall A · Dr. Grace Kimani&#39;, &#39;In-person&#39;)" class="browse-card w-full text-left p-gutter-lg rounded-lg bg-light-surface-container-low dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant flex flex-col gap-gutter-sm active:opacity-80" data-meta="Tue In-person Hall A MAT 204 Linear Algebra Grace Kimani">
+        <header class="flex items-center justify-between gap-gutter-sm w-full">
+          <span data-design-text-token="title-lg" class="font-headline text-title-lg text-light-on-surface dark:text-dark-on-surface tabular-nums">Tue 11:00 – 12:30</span>
+          <span data-design-text-token="label-sm" class="px-gutter-sm py-gutter-xs rounded-full bg-light-secondary-container dark:bg-dark-secondary-container text-light-on-secondary-container dark:text-dark-on-secondary-container font-label text-label-sm">In-person</span>
+        </header>
+        <div>
+          <h2 data-design-text-token="title-md" class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface">MAT 204 · Linear Algebra</h2>
+          <p data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant dark:text-dark-on-surface-variant">Hall A · Dr. Grace Kimani</p>
+        </div>
+      </button>
+    </main>
+
+    <!-- Bottom Tab Bar -->
+    <nav aria-label="Primary navigation" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-30 bg-light-surface-container dark:bg-dark-surface-container border-t border-light-outline-variant dark:border-dark-outline-variant pb-[env(safe-area-inset-bottom)]">
+      <div class="grid grid-cols-4 h-[56px]">
+        <a href="../today/Today.html" class="flex flex-col items-center justify-center min-h-[48px] text-light-on-surface-variant dark:text-dark-on-surface-variant">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">today</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm">Today</span>
+        </a>
+        <a href="../week/Week.html" class="flex flex-col items-center justify-center min-h-[48px] text-light-on-surface-variant dark:text-dark-on-surface-variant">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">date_range</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm">Week</span>
+        </a>
+        <a href="Browse.html" aria-current="page" class="flex flex-col items-center justify-center min-h-[48px] text-light-primary dark:text-dark-primary">
+          <span class="material-symbols-outlined text-[22px]" style="font-variation-settings: &#39;FILL&#39; 1;" aria-hidden="true">search</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm">Browse</span>
+        </a>
+        <a href="../settings/Settings.html" class="flex flex-col items-center justify-center min-h-[48px] text-light-on-surface-variant dark:text-dark-on-surface-variant">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">settings</span>
+          <span data-design-text-token="label-sm" class="font-label text-label-sm">Settings</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Bottom Sheet -->
+    <div id="sheet-backdrop" class="hidden fixed inset-0 z-40 bg-light-on-surface/50 dark:bg-dark-background/70" onclick="closeSheet()"></div>
+    <section id="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" class="hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 bg-light-surface-container-high dark:bg-dark-surface-container-high rounded-t-xl border-t border-light-outline-variant dark:border-dark-outline-variant p-gutter-lg pb-[calc(24px+env(safe-area-inset-bottom))] flex flex-col gap-gutter-md">
+      <div class="flex justify-center pb-gutter-xs" onclick="closeSheet()"><span class="w-[40px] h-[4px] rounded-full bg-light-outline dark:bg-dark-outline"></span></div>
+      <div class="flex items-start justify-between gap-gutter-sm">
+        <div>
+          <span id="sheet-time" data-design-text-token="title-lg" class="font-headline text-title-lg text-light-primary dark:text-dark-primary tabular-nums"></span>
+          <h2 id="sheet-title" data-design-text-token="headline-md" class="font-headline text-headline-md text-light-on-surface dark:text-dark-on-surface"></h2>
+        </div>
+        <button type="button" onclick="closeSheet()" aria-label="Close details" class="inline-flex items-center justify-center w-[48px] h-[48px] -mr-gutter-sm -mt-gutter-sm rounded-full bg-light-surface-container dark:bg-dark-surface-container text-light-on-surface dark:text-dark-on-surface">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <p id="sheet-sub" data-design-text-token="body-md" class="font-body text-body-md text-light-on-surface-variant dark:text-dark-on-surface-variant"></p>
+      <span id="sheet-mode" data-design-text-token="label-md" class="self-start px-gutter-md py-gutter-xs rounded-full bg-light-secondary-container dark:bg-dark-secondary-container text-light-on-secondary-container dark:text-dark-on-secondary-container font-label text-label-md"></span>
+    </section>
+
+  </div>
+
+  <script>
+    let currentFilter = 'all';
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-chip').forEach(function (btn) {
+        const active = btn.dataset.filter === f;
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.className = active
+          ? 'filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary font-label text-label-md whitespace-nowrap'
+          : 'filter-chip inline-flex items-center justify-center min-h-[48px] px-gutter-lg rounded-full bg-light-surface-container-low dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-label text-label-md whitespace-nowrap';
+      });
+      filterBrowse();
+    }
+
+    function filterBrowse() {
+      const q = document.getElementById('browse-search').value.toLowerCase();
+      document.querySelectorAll('.browse-card').forEach(function (card) {
+        const meta = card.dataset.meta.toLowerCase();
+        const matchesQuery = !q || meta.indexOf(q) !== -1;
+        const matchesChip = currentFilter === 'all' || meta.indexOf(currentFilter.toLowerCase()) !== -1;
+        card.classList.toggle('hidden', !(matchesQuery && matchesChip));
+      });
+    }
+
+    function openSheet(time, title, sub, mode) {
+      document.getElementById('sheet-time').textContent = time;
+      document.getElementById('sheet-title').textContent = title;
+      document.getElementById('sheet-sub').textContent = sub;
+      document.getElementById('sheet-mode').textContent = mode;
+      document.getElementById('sheet-backdrop').classList.remove('hidden');
+      document.getElementById('detail-sheet').classList.remove('hidden');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheet-backdrop').classList.add('hidden');
+      document.getElementById('detail-sheet').classList.add('hidden');
+    }
+  </script>
+
+
+</body></html>

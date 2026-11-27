@@ -1,0 +1,1 @@
+C.S = class size · M.O.S = mode of study · SPW = sessions per week (diploma/cert pages) · Course code = programme + year.semester (e.g. BCHM1.1 = Hospitality, year 1 sem 1) · Suffix S/SSP = school-based/special programme cohorts (confirm with Brian) · Groups = other courses that share the same class.

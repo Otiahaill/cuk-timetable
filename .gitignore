@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+*.apk
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AndroidHarness specific
+.harness/
+.harness-scratch/
+.harness/attachments/
+.harness/bg/
+.harness/memory/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+
+# Reference folders (external projects)
+reference/
+sande2/
+delivery/
+
+# Misc
+*.txt
+!README.txt
+!CHANGELOG.txt
