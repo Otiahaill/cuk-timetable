@@ -1,6 +1,7 @@
 /* Browse screen — Search + filter chips + results per Stitch */
 
 import { useState, useEffect, useMemo } from 'preact/hooks';
+import type { JSX } from 'preact';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse, searchClasses, filterClasses, parseTime, formatTimeRange, formatTime } from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
@@ -43,7 +44,8 @@ export function BrowseScreen() {
       return getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes);
     }
     return timetable.classes.filter((c) => !isUnitHidden(c.unit_code || ''));
-  }, [timetable, prefs.courseCode, prefs.hiddenUnitCodes, isUnitHidden]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timetable, prefs.courseCode, prefs.hiddenUnitCodes]);
 
   // Unique filter options from base classes
   const filterOptions = useMemo(() => {
@@ -123,7 +125,7 @@ export function BrowseScreen() {
       <div className="flex gap-gutter-sm overflow-x-auto pb-gutter-xs" role="group" aria-label={`${label} filters`}>
         {options.map((option) => {
           const isActive = selectedFilters[type] === option;
-          let chipStyle: React.CSSProperties = {};
+          let chipStyle: JSX.CSSProperties = {};
 
           if (type === 'mode') {
             const colors = modeColors[option] || { bg: 'var(--color-surface-container)', text: 'var(--color-on-surface)' };

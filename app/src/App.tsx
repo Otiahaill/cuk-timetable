@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
+import type { JSX } from 'preact';
 import { TodayScreen } from './screens/TodayScreen';
 import { WeekScreen } from './screens/WeekScreen';
 import { BrowseScreen } from './screens/BrowseScreen';

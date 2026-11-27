@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:local": "node scripts/run-tests.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:imports": "node scripts/check-imports.mjs"
   },
   "dependencies": {
     "preact": "^11.2.0"

@@ -1,78 +1,73 @@
 /* Service Worker — CampusPulse
- * Cache-first for app shell, stale-while-revalidate for /data/*
- * Versioned cache names, old caches deleted on activate
+ * Cache-first for the app shell, stale-while-revalidate for data files.
+ * All URLs are relative to the SW scope so the same file works at "/"
+ * (Cloudflare Pages) and "/cuk-timetable/" (GitHub Pages).
  */
 
-const APP_VERSION = 'v1'; // Increment when app shell changes
-const APP_SHELL_CACHE = `campuspulse-shell-${APP_VERSION}`;
-const DATA_CACHE = 'campuspulse-data-v1';
+const APP_VERSION = 'v1';
+const APP_SHELL_CACHE = `cuk-shell-${APP_VERSION}`;
+const DATA_CACHE = 'cuk-data-v1';
 
-// Files to cache immediately (app shell)
 const APP_SHELL_FILES = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.svg',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './favicon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
-// Install: cache app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(APP_SHELL_CACHE)
+    caches
+      .open(APP_SHELL_CACHE)
       .then((cache) => cache.addAll(APP_SHELL_FILES))
       .then(() => self.skipWaiting())
+      .catch((err) => console.warn('SW: shell precache failed', err))
   );
 });
 
-// Activate: clean old caches, claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(
+          names
             .filter((name) => name !== APP_SHELL_CACHE && name !== DATA_CACHE)
             .map((name) => caches.delete(name))
-        );
-      })
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch: cache-first for app shell, stale-while-revalidate for /data/*
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // Only handle same-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
-
-  // API/data requests: stale-while-revalidate
-  if (url.pathname.startsWith('/data/')) {
+  // Data files (timetable.json, version.json, changes.json)
+  if (url.pathname.includes('/data/')) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
 
-  // Navigation requests: network-first with offline fallback
+  // SPA navigations: network first, fall back to cached index.html
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstWithOfflineFallback(request));
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  // Static assets: cache-first
+  // Static assets: cache first
   event.respondWith(cacheFirst(request));
 });
 
-/** Cache-first strategy */
 async function cacheFirst(request) {
   const cached = await caches.match(request);
-  if (cached) {
-    return cached;
-  }
+  if (cached) return cached;
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -81,16 +76,15 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    // Return offline fallback for HTML
     if (request.headers.get('accept')?.includes('text/html')) {
-      return caches.match('/index.html');
+      const fallback = await caches.match('./index.html');
+      if (fallback) return fallback;
     }
-    throw new Error('Offline');
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
   }
 }
 
-/** Network-first with offline fallback */
-async function networkFirstWithOfflineFallback(request) {
+async function networkFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -100,39 +94,30 @@ async function networkFirstWithOfflineFallback(request) {
     return response;
   } catch {
     const cached = await caches.match(request);
-    if (cached) {
-      return cached;
-    }
-    // Return cached index.html for SPA fallback
-    return caches.match('/index.html');
+    if (cached) return cached;
+    const fallback = await caches.match('./index.html');
+    if (fallback) return fallback;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
   }
 }
 
-/** Stale-while-revalidate for data */
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(DATA_CACHE);
   const cached = await cache.match(request);
 
-  // Fetch fresh in background
-  const fetchPromise = fetch(request)
+  const network = fetch(request)
     .then((response) => {
-      if (response.ok) {
-        cache.put(request, response.clone());
-      }
+      if (response.ok) cache.put(request, response.clone());
       return response;
     })
-    .catch(() => cached); // Return cached if network fails
+    .catch(() => cached);
 
-  // Return cached immediately if available, otherwise wait for network
-  return cached || fetchPromise;
+  return cached || network;
 }
 
-// Listen for messages from clients
 self.addEventListener('message', (event) => {
-  if (event.data === 'skipWaiting') {
-    self.skipWaiting();
-  }
-  if (event.data === 'getVersion') {
+  if (event.data === 'skipWaiting') self.skipWaiting();
+  if (event.data === 'getVersion' && event.ports && event.ports[0]) {
     event.ports[0].postMessage({ version: APP_VERSION });
   }
 });

@@ -19,11 +19,11 @@ import {
   detectClashes,
   searchClasses,
   filterClasses,
+  getCourses,
 } from './data';
 
 import type { TimetableData, Class } from './types';
 
-// Mock timetable data for testing
 const mockClass: Class = {
   id: 'cls_001',
   course: 'BCHM1.1',
@@ -73,15 +73,13 @@ const mockTimetable: TimetableData = {
     notes: [],
     data_quality: { fixed_or_inferred: [], same_slot_clashes_in_source: [] },
   },
-  courses: [
-    { code: 'BCHM1.1', level: 'degree', class_count: 3 },
-  ],
+  courses: [{ code: 'BCHM1.1', level: 'degree', class_count: 3 }],
   classes: [mockClass, mockClass2, mockClassTue],
 };
 
 describe('Time parsing', () => {
   it('parses 7:00AM correctly', () => {
-    expect(parseTime('7:00AM')).toBe(7 * 60); // 420
+    expect(parseTime('7:00AM')).toBe(7 * 60);
   });
 
   it('parses 12:00AM (midnight) correctly', () => {
@@ -89,23 +87,15 @@ describe('Time parsing', () => {
   });
 
   it('parses 12:00PM (noon) correctly', () => {
-    expect(parseTime('12:00PM')).toBe(12 * 60); // 720
+    expect(parseTime('12:00PM')).toBe(12 * 60);
   });
 
   it('parses 1:00PM correctly', () => {
-    expect(parseTime('1:00PM')).toBe(13 * 60); // 780
+    expect(parseTime('1:00PM')).toBe(13 * 60);
   });
 
   it('parses 11:59PM correctly', () => {
-    expect(parseTime('11:59PM')).toBe(23 * 60 + 59); // 1439
-  });
-
-  it('parses 12:30AM correctly', () => {
-    expect(parseTime('12:30AM')).toBe(30);
-  });
-
-  it('parses 12:30PM correctly', () => {
-    expect(parseTime('12:30PM')).toBe(12 * 60 + 30); // 750
+    expect(parseTime('11:59PM')).toBe(23 * 60 + 59);
   });
 
   it('throws on invalid format', () => {
@@ -139,8 +129,8 @@ describe('Day index', () => {
   });
 
   it('returns -1 for weekend', () => {
-    expect(dayIndex('Saturday' as any)).toBe(-1);
-    expect(dayIndex('Sunday' as any)).toBe(-1);
+    expect(dayIndex('Saturday' as never)).toBe(-1);
+    expect(dayIndex('Sunday' as never)).toBe(-1);
   });
 });
 
@@ -172,53 +162,62 @@ describe('Timetable validation', () => {
   });
 
   it('rejects missing meta', () => {
-    const bad = { ...mockTimetable, meta: undefined };
-    expect(validateTimetable(bad)).toBe(false);
+    expect(validateTimetable({ ...mockTimetable, meta: undefined })).toBe(false);
   });
 
   it('rejects invalid course', () => {
-    const bad = {
-      ...mockTimetable,
-      courses: [{ code: 'X', level: 'invalid', class_count: 1 }],
-    };
-    expect(validateTimetable(bad)).toBe(false);
+    expect(
+      validateTimetable({
+        ...mockTimetable,
+        courses: [{ code: 'X', level: 'invalid', class_count: 1 }],
+      })
+    ).toBe(false);
   });
 
-  it('rejects invalid class', () => {
-    const bad = {
-      ...mockTimetable,
-      classes: [{ ...mockClass, day: 'Someday' }],
-    };
-    expect(validateTimetable(bad)).toBe(false);
+  it('rejects invalid class day', () => {
+    expect(
+      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, day: 'Someday' }] })
+    ).toBe(false);
   });
 
   it('rejects invalid mode', () => {
-    const bad = {
-      ...mockTimetable,
-      classes: [{ ...mockClass, mode: 'Hybrid' }],
-    };
-    expect(validateTimetable(bad)).toBe(false);
+    expect(
+      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, mode: 'Hybrid' }] })
+    ).toBe(false);
   });
 
   it('rejects invalid time format', () => {
-    const bad = {
-      ...mockTimetable,
-      classes: [{ ...mockClass, start: '7:00' }],
-    };
-    expect(validateTimetable(bad)).toBe(false);
+    expect(
+      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, start: '7:00' }] })
+    ).toBe(false);
+  });
+
+  it('rejects end time before start time', () => {
+    expect(
+      validateTimetable({
+        ...mockTimetable,
+        classes: [{ ...mockClass, start: '10:00AM', end: '7:00AM' }],
+      })
+    ).toBe(false);
   });
 
   it('rejects duplicate composite keys', () => {
-    const bad = {
-      ...mockTimetable,
-      classes: [mockClass, { ...mockClass, id: 'cls_002' }], // same composite key
-    };
-    expect(validateTimetable(bad)).toBe(false);
+    expect(
+      validateTimetable({
+        ...mockTimetable,
+        classes: [mockClass, { ...mockClass, id: 'cls_002' }],
+      })
+    ).toBe(false);
+  });
+
+  it('rejects non-object input', () => {
+    expect(validateTimetable(null)).toBe(false);
+    expect(validateTimetable('nope')).toBe(false);
   });
 });
 
 describe('Changes validation', () => {
-  const validChanges: ChangesData = {
+  const validChanges = {
     version: 'r1',
     updated: '2026-11-27',
     changes: [
@@ -242,21 +241,20 @@ describe('Changes validation', () => {
   });
 
   it('rejects missing fields', () => {
-    const bad = { ...validChanges, changes: [{ match: {}, reason: '', date: '' }] };
-    expect(validateChanges(bad)).toBe(false);
+    expect(validateChanges({ ...validChanges, changes: [{ match: {}, reason: '', date: '' }] })).toBe(
+      false
+    );
   });
 
   it('rejects invalid cancel type', () => {
-    const bad = {
-      ...validChanges,
-      changes: [{ ...validChanges.changes[0], cancel: 'yes' }],
-    };
-    expect(validateChanges(bad)).toBe(false);
+    expect(
+      validateChanges({ ...validChanges, changes: [{ ...validChanges.changes[0], cancel: 'yes' }] })
+    ).toBe(false);
   });
 });
 
 describe('Apply changes', () => {
-  const changes: ChangesData = {
+  const changes = {
     version: 'r1',
     updated: '2026-11-27',
     changes: [
@@ -302,6 +300,12 @@ describe('Apply changes', () => {
     );
     consoleWarn.mockRestore();
   });
+
+  it('does not mutate the original array', () => {
+    const original = [...mockTimetable.classes];
+    applyChanges(mockTimetable.classes, changes);
+    expect(mockTimetable.classes).toEqual(original);
+  });
 });
 
 describe('Course filtering', () => {
@@ -312,14 +316,42 @@ describe('Course filtering', () => {
   });
 
   it('returns empty for unknown course', () => {
-    const result = getClassesForCourse(mockTimetable, 'UNKNOWN', []);
-    expect(result.length).toBe(0);
+    expect(getClassesForCourse(mockTimetable, 'UNKNOWN', []).length).toBe(0);
+  });
+
+  it('sorts by day then start time', () => {
+    const result = getClassesForCourse(mockTimetable, 'BCHM1.1', []);
+    expect(result.map((c) => c.day)).toEqual(['Monday', 'Monday', 'Tuesday']);
+    expect(result[0].start).toBe('7:00AM');
+  });
+
+  it('sorts 10:00AM before 7:00AM correctly', () => {
+    const early: Class = { ...mockClass, id: 'a', start: '7:00AM', end: '10:00AM' };
+    const late: Class = { ...mockClass, id: 'b', start: '10:00AM', end: '1:00PM' };
+    const result = getClassesForCourse(
+      { ...mockTimetable, classes: [late, early] },
+      'BCHM1.1',
+      []
+    );
+    expect(result[0].id).toBe('a');
+  });
+
+  it('sorts courses by code', () => {
+    const courses = getCourses({
+      ...mockTimetable,
+      courses: [
+        { code: 'ZCODE', level: 'degree', class_count: 1 },
+        { code: 'ACODE', level: 'degree', class_count: 1 },
+      ],
+    });
+    expect(courses.map((c) => c.code)).toEqual(['ACODE', 'ZCODE']);
   });
 });
 
 describe('Today filtering', () => {
   it('returns Monday classes when today is Monday', () => {
-    vi.setSystemTime(new Date('2026-11-30T10:00:00+03:00')); // Monday
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-30T10:00:00+03:00'));
     const result = getTodaysClasses(mockTimetable.classes);
     expect(result.length).toBe(2);
     expect(result.every((c) => c.day === 'Monday')).toBe(true);
@@ -327,29 +359,38 @@ describe('Today filtering', () => {
   });
 
   it('returns empty on weekend', () => {
-    vi.setSystemTime(new Date('2026-12-05T10:00:00+03:00')); // Saturday
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-12-05T10:00:00+03:00'));
+    expect(getTodaysClasses(mockTimetable.classes).length).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('sorts today classes by real clock order, not string order', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-30T06:00:00+03:00'));
     const result = getTodaysClasses(mockTimetable.classes);
-    expect(result.length).toBe(0);
+    expect(result.map((c) => c.start)).toEqual(['7:00AM', '11:00AM']);
     vi.useRealTimers();
   });
 });
 
 describe('Next class', () => {
-  const mondayClasses = [mockClass, mockClass2]; // 7AM-10AM, 11AM-2PM
+  const mondayClasses = [mockClass, mockClass2];
 
   it('returns first class before any class', () => {
-    const next = getNextClass(mondayClasses, 6 * 60); // 6:00AM
-    expect(next?.unit_code).toBe('BCHM1101');
+    expect(getNextClass(mondayClasses, 6 * 60)?.unit_code).toBe('BCHM1101');
   });
 
   it('returns second class between classes', () => {
-    const next = getNextClass(mondayClasses, 10 * 60 + 30); // 10:30AM
-    expect(next?.unit_code).toBe('BCHM1102');
+    expect(getNextClass(mondayClasses, 10 * 60 + 30)?.unit_code).toBe('BCHM1102');
+  });
+
+  it('returns the in-progress class while it is running', () => {
+    expect(getNextClass(mondayClasses, 8 * 60)?.unit_code).toBe('BCHM1101');
   });
 
   it('returns null after last class', () => {
-    const next = getNextClass(mondayClasses, 15 * 60); // 3:00PM
-    expect(next).toBeNull();
+    expect(getNextClass(mondayClasses, 15 * 60)).toBeNull();
   });
 
   it('returns null for empty list', () => {
@@ -358,10 +399,8 @@ describe('Next class', () => {
 });
 
 describe('Minutes until start', () => {
-  it('calculates correctly', () => {
-    const mins = getMinutesUntilStart(mockClass); // 7:00AM
-    // Depends on current time, just verify it's a number
-    expect(typeof mins).toBe('number');
+  it('calculates a number', () => {
+    expect(typeof getMinutesUntilStart(mockClass)).toBe('number');
   });
 });
 
@@ -401,34 +440,37 @@ describe('Clash detection', () => {
 
     const clashes = detectClashes([clash1, clash2, noClash]);
     expect(clashes.size).toBe(1);
-    const clashList = clashes.values().next().value;
-    expect(clashList.length).toBe(2);
+    expect(clashes.values().next().value?.length).toBe(2);
   });
 
   it('does not detect adjacent classes as clash', () => {
     const a: Class = { ...mockClass, id: 'a', start: '7:00AM', end: '10:00AM' };
     const b: Class = { ...mockClass, id: 'b', start: '10:00AM', end: '1:00PM' };
 
-    const clashes = detectClashes([a, b]);
-    expect(clashes.size).toBe(0);
+    expect(detectClashes([a, b]).size).toBe(0);
   });
 
-  it('deduplicates clash entries', () => {
+  it('groups transitively overlapping classes into one entry', () => {
     const a: Class = { ...mockClass, id: 'a', start: '7:00AM', end: '10:00AM' };
     const b: Class = { ...mockClass, id: 'b', start: '8:00AM', end: '11:00AM' };
     const c: Class = { ...mockClass, id: 'c', start: '9:00AM', end: '12:00PM' };
 
     const clashes = detectClashes([a, b, c]);
-    // All three overlap pairwise, but should be one clash group with 3 unique classes
     expect(clashes.size).toBe(1);
-    expect(clashes.values().next().value.length).toBe(3);
+    expect(clashes.values().next().value?.length).toBe(3);
+  });
+
+  it('does not clash across different days', () => {
+    const mon: Class = { ...mockClass, id: 'm', day: 'Monday', start: '7:00AM', end: '10:00AM' };
+    const tue: Class = { ...mockClass, id: 't', day: 'Tuesday', start: '7:00AM', end: '10:00AM' };
+
+    expect(detectClashes([mon, tue]).size).toBe(0);
   });
 });
 
 describe('Search', () => {
   it('finds by unit name', () => {
-    const results = searchClasses(mockTimetable.classes, 'chemistry');
-    expect(results.length).toBe(3);
+    expect(searchClasses(mockTimetable.classes, 'chemistry').length).toBe(3);
   });
 
   it('finds by unit code', () => {
@@ -438,13 +480,11 @@ describe('Search', () => {
   });
 
   it('finds by lecturer', () => {
-    const results = searchClasses(mockTimetable.classes, 'smith');
-    expect(results.length).toBe(3);
+    expect(searchClasses(mockTimetable.classes, 'smith').length).toBe(3);
   });
 
   it('finds by venue', () => {
-    const results = searchClasses(mockTimetable.classes, 'academic');
-    expect(results.length).toBe(3);
+    expect(searchClasses(mockTimetable.classes, 'academic').length).toBe(3);
   });
 
   it('returns all for empty query', () => {
@@ -455,27 +495,20 @@ describe('Search', () => {
 
 describe('Filter', () => {
   it('filters by mode', () => {
-    const mixed = [
-      mockClass,
-      { ...mockClass, id: 'c2', mode: 'Online' as const },
-    ];
-    const faceToFace = filterClasses(mixed, { mode: 'Face to face' });
-    expect(faceToFace.length).toBe(1);
+    const mixed = [mockClass, { ...mockClass, id: 'c2', mode: 'Online' as const }];
+    expect(filterClasses(mixed, { mode: 'Face to face' }).length).toBe(1);
   });
 
   it('filters by day', () => {
-    const results = filterClasses(mockTimetable.classes, { day: 'Monday' });
-    expect(results.length).toBe(2);
+    expect(filterClasses(mockTimetable.classes, { day: 'Monday' }).length).toBe(2);
   });
 
   it('filters by venue', () => {
-    const results = filterClasses(mockTimetable.classes, { venue: 'ACADEMIC HALL' });
-    expect(results.length).toBe(3);
+    expect(filterClasses(mockTimetable.classes, { venue: 'ACADEMIC HALL' }).length).toBe(3);
   });
 
   it('filters by level', () => {
-    const results = filterClasses(mockTimetable.classes, { level: 'degree' });
-    expect(results.length).toBe(3);
+    expect(filterClasses(mockTimetable.classes, { level: 'degree' }).length).toBe(3);
   });
 
   it('combines filters (AND)', () => {
@@ -484,7 +517,6 @@ describe('Filter', () => {
       { ...mockClass, id: 'c2', mode: 'Online' as const, day: 'Monday' as const },
       { ...mockClass, id: 'c3', mode: 'Face to face' as const, day: 'Tuesday' as const },
     ];
-    const results = filterClasses(mixed, { mode: 'Face to face', day: 'Monday' });
-    expect(results.length).toBe(1);
+    expect(filterClasses(mixed, { mode: 'Face to face', day: 'Monday' }).length).toBe(1);
   });
 });

@@ -1,6 +1,7 @@
 /* Shared class detail bottom sheet — used by Today, Week, Browse */
 
 import { useEffect, useRef, useState } from 'preact/hooks';
+import type { JSX } from 'preact';
 import type { Class } from '../lib/types';
 import { formatTimeRange } from '../lib/types';
 
@@ -17,18 +18,18 @@ export function ClassDetailSheet({ classData, isOpen, onClose, onShare }: ClassD
   const [startY, setStartY] = useState(0);
   const [translateY, setTranslateY] = useState(0);
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
+  const handleBackdropClick = (e: JSX.TargetedMouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: JSX.TargetedTouchEvent<HTMLDivElement>) => {
     setDragging(true);
     setStartY(e.touches[0].clientY);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: JSX.TargetedTouchEvent<HTMLDivElement>) => {
     if (!dragging) return;
     const delta = e.touches[0].clientY - startY;
     if (delta > 0) {

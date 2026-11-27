@@ -1,10 +1,17 @@
-/* Update mechanism — CampusPulse */
+/* Update mechanism — CampusPulse
+ *
+ * NOTE: this module must stay hook-free so it can be called from
+ * non-component code (timers, service worker messages, event handlers).
+ */
 
 import { loadVersion, loadTimetable, loadChanges, applyChanges } from './data';
-import { usePreferences } from './prefs';
+import { readPref, writePref } from './prefs';
 import type { TimetableData } from './types';
 
-const DATA_BASE = '/data';
+const DATA_BASE = `${(import.meta.env?.BASE_URL as string | undefined) ?? '/'}data`.replace(
+  /\/{2,}/g,
+  '/'
+);
 const UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
 export interface UpdateResult {
@@ -14,13 +21,12 @@ export interface UpdateResult {
   hadChanges: boolean;
 }
 
-/** Check for updates and apply atomically */
+/** Check for a newer data version and apply it atomically */
 export async function checkAndApplyUpdate(): Promise<UpdateResult> {
   try {
     const versionInfo = await loadVersion();
-    const prefs = usePreferences();
+    const currentVersion = readPref('dataVersion');
 
-    const currentVersion = prefs.prefs.dataVersion;
     if (currentVersion === versionInfo.version) {
       return {
         updated: false,
@@ -30,29 +36,29 @@ export async function checkAndApplyUpdate(): Promise<UpdateResult> {
       };
     }
 
+    // Load the new timetable first — only swap if it validates.
     const newTimetable = await loadTimetable();
 
     let hadChanges = false;
     let finalTimetable = newTimetable;
 
-    try {
-      const changes = await loadChanges();
-      if (changes && changes.changes.length > 0) {
-        finalTimetable = {
-          ...newTimetable,
-          classes: applyChanges(newTimetable.classes, changes),
-        };
-        hadChanges = true;
-      }
-    } catch {
-      // changes.json is optional
+    const changes = await loadChanges();
+    if (changes && changes.changes.length > 0) {
+      finalTimetable = {
+        ...newTimetable,
+        classes: applyChanges(newTimetable.classes, changes),
+      };
+      hadChanges = true;
     }
 
-    prefs.setDataVersion(versionInfo.version);
+    // Persist the new version only after a successful load.
+    writePref('dataVersion', versionInfo.version);
 
-    window.dispatchEvent(new CustomEvent('cukt:data-updated', {
-      detail: { timetable: finalTimetable, version: versionInfo.version },
-    }));
+    window.dispatchEvent(
+      new CustomEvent('cukt:data-updated', {
+        detail: { timetable: finalTimetable, version: versionInfo.version },
+      })
+    );
 
     return {
       updated: true,
@@ -66,14 +72,12 @@ export async function checkAndApplyUpdate(): Promise<UpdateResult> {
   }
 }
 
-/** Start periodic update checking */
+/** Start periodic update checking; returns a cleanup function */
 export function startPeriodicUpdateCheck(onUpdate?: (result: UpdateResult) => void): () => void {
   const intervalId = window.setInterval(async () => {
     try {
       const result = await checkAndApplyUpdate();
-      if (result.updated && onUpdate) {
-        onUpdate(result);
-      }
+      if (result.updated && onUpdate) onUpdate(result);
     } catch (error) {
       console.error('Periodic update check failed:', error);
     }
@@ -82,24 +86,27 @@ export function startPeriodicUpdateCheck(onUpdate?: (result: UpdateResult) => vo
   return () => window.clearInterval(intervalId);
 }
 
-/** Manual update trigger (for "Check for updates" button) */
+/** Manual update trigger (for the "Check for updates" button) */
 export async function manualUpdateCheck(): Promise<UpdateResult> {
   return checkAndApplyUpdate();
 }
 
-/** Subscribe to data updates from other tabs */
-export function subscribeToUpdates(callback: (timetable: TimetableData, version: string) => void): () => void {
-  const handler = (event: CustomEvent) => {
-    if (event.type === 'cukt:data-updated' && event.detail) {
-      callback(event.detail.timetable, event.detail.version);
+/** Subscribe to data updates broadcast by this tab */
+export function subscribeToUpdates(
+  callback: (timetable: TimetableData, version: string) => void
+): () => void {
+  const handler = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    if (event.type === 'cukt:data-updated' && detail) {
+      callback(detail.timetable, detail.version);
     }
   };
 
-  window.addEventListener('cukt:data-updated', handler as EventListener);
-  return () => window.removeEventListener('cukt:data-updated', handler as EventListener);
+  window.addEventListener('cukt:data-updated', handler);
+  return () => window.removeEventListener('cukt:data-updated', handler);
 }
 
-/** Validate data integrity after update */
+/** Verify that the served timetable.json matches the SHA256 in version.json */
 export async function validateUpdatedData(): Promise<boolean> {
   try {
     const versionInfo = await loadVersion();

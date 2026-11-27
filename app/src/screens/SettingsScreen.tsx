@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, loadVersion, loadChanges, applyChanges, getClassesForCourse } from '../lib/data';
-import type { TimetableData, Class } from '../lib/types';
+import type { TimetableData } from '../lib/types';
 
 export function SettingsScreen() {
   const { prefs, setTheme, setCourseCode, toggleUnitHidden, isUnitHidden, setDataVersion } = usePreferences();
@@ -150,6 +150,18 @@ export function SettingsScreen() {
           <div className="w-[40px] h-[40px] border-4 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="font-body text-body-md text-on-surface-variant">Loading settings…</p>
         </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center gap-gutter-lg px-page-margin text-center">
+        <span className="material-symbols-outlined text-[48px] text-error" aria-hidden="true">error</span>
+        <p className="font-body text-body-md text-on-surface-variant max-w-[320px]">{error}</p>
+        <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+          Retry
+        </button>
       </main>
     );
   }

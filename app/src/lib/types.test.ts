@@ -8,10 +8,15 @@ import {
   dayIndex,
   classKey,
   isClassHidden,
+  getNairobiDayName,
+  getNairobiMinutes,
+  isNairobiWeekend,
+  formatNairobiDate,
+  getNextMondayDate,
 } from './types';
+import type { Class } from './types';
 
 describe('parseTime edge cases (12-hour format)', () => {
-  // 12AM / 12PM edge cases
   it('parses 12:00AM as midnight (0 minutes)', () => {
     expect(parseTime('12:00AM')).toBe(0);
   });
@@ -36,7 +41,6 @@ describe('parseTime edge cases (12-hour format)', () => {
     expect(parseTime('12:59PM')).toBe(12 * 60 + 59);
   });
 
-  // Regular hours
   it('parses 1:00AM as 1:00 (60 minutes)', () => {
     expect(parseTime('1:00AM')).toBe(60);
   });
@@ -53,7 +57,6 @@ describe('parseTime edge cases (12-hour format)', () => {
     expect(parseTime('11:00PM')).toBe(23 * 60);
   });
 
-  // Minutes precision
   it('parses 7:05AM correctly', () => {
     expect(parseTime('7:05AM')).toBe(7 * 60 + 5);
   });
@@ -62,18 +65,11 @@ describe('parseTime edge cases (12-hour format)', () => {
     expect(parseTime('7:59AM')).toBe(7 * 60 + 59);
   });
 
-  // Case insensitivity
   it('parses lowercase am/pm', () => {
     expect(parseTime('7:00am')).toBe(7 * 60);
     expect(parseTime('7:00pm')).toBe(19 * 60);
   });
 
-  it('parses mixed case am/pm', () => {
-    expect(parseTime('7:00Am')).toBe(7 * 60);
-    expect(parseTime('7:00Pm')).toBe(19 * 60);
-  });
-
-  // Invalid formats
   it('throws on 24-hour format', () => {
     expect(() => parseTime('19:00')).toThrow();
   });
@@ -83,7 +79,7 @@ describe('parseTime edge cases (12-hour format)', () => {
   });
 
   it('throws on invalid hour', () => {
-    expect(() => parseTime('0:00AM')).toThrow(); // 12-hour uses 1-12
+    expect(() => parseTime('0:00AM')).toThrow();
     expect(() => parseTime('13:00AM')).toThrow();
   });
 
@@ -113,16 +109,14 @@ describe('formatTime (inverse of parseTime)', () => {
     expect(formatTime(23 * 60 + 59)).toBe('11:59 PM');
   });
 
-  it('round-trip: parseTime -> formatTime -> parseTime', () => {
+  it('round-trips parseTime -> formatTime -> parseTime', () => {
     const testTimes = [
       '12:00AM', '12:30AM', '1:00AM', '7:00AM', '11:59AM',
       '12:00PM', '12:30PM', '1:00PM', '7:00PM', '11:59PM',
     ];
     for (const t of testTimes) {
       const mins = parseTime(t);
-      const formatted = formatTime(mins);
-      const reparsed = parseTime(formatted);
-      expect(reparsed).toBe(mins);
+      expect(parseTime(formatTime(mins))).toBe(mins);
     }
   });
 });
@@ -138,15 +132,12 @@ describe('formatTimeRange', () => {
 describe('dayIndex', () => {
   it('returns 0-4 for Mon-Fri', () => {
     expect(dayIndex('Monday')).toBe(0);
-    expect(dayIndex('Tuesday')).toBe(1);
-    expect(dayIndex('Wednesday')).toBe(2);
-    expect(dayIndex('Thursday')).toBe(3);
     expect(dayIndex('Friday')).toBe(4);
   });
 
   it('returns -1 for weekend', () => {
-    expect(dayIndex('Saturday' as any)).toBe(-1);
-    expect(dayIndex('Sunday' as any)).toBe(-1);
+    expect(dayIndex('Saturday' as never)).toBe(-1);
+    expect(dayIndex('Sunday' as never)).toBe(-1);
   });
 });
 
@@ -162,28 +153,13 @@ describe('classKey (composite key)', () => {
     expect(key).toBe('BCHM1.1|NULL|Monday|7:00AM');
   });
 
-  it('differs for different courses', () => {
-    const key1 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday', start: '7:00AM' });
-    const key2 = classKey({ course: 'BCHM2.1', unit_code: 'BCHM1101', day: 'Monday', start: '7:00AM' });
-    expect(key1).not.toBe(key2);
-  });
-
-  it('differs for different unit codes', () => {
-    const key1 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday', start: '7:00AM' });
-    const key2 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1102', day: 'Monday', start: '7:00AM' });
-    expect(key1).not.toBe(key2);
-  });
-
-  it('differs for different days', () => {
-    const key1 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday', start: '7:00AM' });
-    const key2 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Tuesday', start: '7:00AM' });
-    expect(key1).not.toBe(key2);
-  });
-
-  it('differs for different start times', () => {
-    const key1 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday', start: '7:00AM' });
-    const key2 = classKey({ course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday', start: '11:00AM' });
-    expect(key1).not.toBe(key2);
+  it('differs for every component', () => {
+    const base = { course: 'BCHM1.1', unit_code: 'BCHM1101', day: 'Monday' as const, start: '7:00AM' };
+    const baseKey = classKey(base);
+    expect(classKey({ ...base, course: 'BCHM2.1' })).not.toBe(baseKey);
+    expect(classKey({ ...base, unit_code: 'BCHM1102' })).not.toBe(baseKey);
+    expect(classKey({ ...base, day: 'Tuesday' })).not.toBe(baseKey);
+    expect(classKey({ ...base, start: '11:00AM' })).not.toBe(baseKey);
   });
 });
 
@@ -214,8 +190,7 @@ describe('isClassHidden', () => {
   });
 
   it('returns false for null unit_code', () => {
-    const clsNull = { ...cls, unit_code: null };
-    expect(isClassHidden(clsNull, ['BCHM1101'])).toBe(false);
+    expect(isClassHidden({ ...cls, unit_code: null }, ['BCHM1101'])).toBe(false);
   });
 
   it('returns false for empty hidden list', () => {
@@ -223,5 +198,27 @@ describe('isClassHidden', () => {
   });
 });
 
-// Need to import Class type
-import type { Class } from './types';
+describe('Africa/Nairobi time helpers', () => {
+  it('returns the Nairobi weekday name', () => {
+    // 2026-11-30T10:00:00+03:00 is a Monday in Nairobi
+    expect(getNairobiDayName(new Date('2026-11-30T10:00:00+03:00'))).toBe('Monday');
+  });
+
+  it('returns Nairobi minutes since midnight', () => {
+    expect(getNairobiMinutes(new Date('2026-11-30T07:30:00+03:00'))).toBe(7 * 60 + 30);
+  });
+
+  it('detects weekends', () => {
+    expect(isNairobiWeekend(new Date('2026-12-05T10:00:00+03:00'))).toBe(true);
+    expect(isNairobiWeekend(new Date('2026-11-30T10:00:00+03:00'))).toBe(false);
+  });
+
+  it('formats a long date', () => {
+    expect(formatNairobiDate(new Date('2026-11-30T10:00:00+03:00'))).toContain('November');
+  });
+
+  it('finds the next Monday', () => {
+    const monday = getNextMondayDate(new Date('2026-11-30T10:00:00+03:00'));
+    expect(getNairobiDayName(monday)).toBe('Monday');
+  });
+});

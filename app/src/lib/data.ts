@@ -1,11 +1,23 @@
 /* Data loading & validation — CampusPulse */
 
 import type { TimetableData, Class, Course, VersionInfo, ChangesData } from './types';
-import { classKey, parseTime, dayIndex } from './types';
+import {
+  classKey,
+  parseTime,
+  dayIndex,
+  getNairobiDayName,
+  getNairobiMinutes,
+} from './types';
 
-const DATA_BASE = '/data';
+/**
+ * Base URL for static data files.
+ * Uses Vite's BASE_URL so the app works at "/" (Cloudflare) and
+ * "/cuk-timetable/" (GitHub Pages) without hard-coded paths.
+ */
+export const BASE_URL = (import.meta.env?.BASE_URL as string | undefined) ?? '/';
+const DATA_BASE = `${BASE_URL}data`.replace(/\/{2,}/g, '/');
 
-/** Fetch JSON with cache-busting for version.json */
+/** Fetch JSON with optional cache-busting */
 async function fetchJson<T>(path: string, cacheBust = false): Promise<T> {
   const url = cacheBust ? `${path}?v=${Date.now()}` : path;
   const response = await fetch(url);
@@ -20,30 +32,25 @@ export function validateTimetable(data: unknown): data is TimetableData {
   if (!data || typeof data !== 'object') return false;
   const d = data as Record<string, unknown>;
 
-  // Required top-level fields
   if (!d.meta || !d.courses || !d.classes) return false;
   if (!Array.isArray(d.courses) || !Array.isArray(d.classes)) return false;
 
-  // Validate meta
   const meta = d.meta as Record<string, unknown>;
   if (typeof meta.title !== 'string' || typeof meta.institution !== 'string') return false;
   if (typeof meta.total_classes !== 'number' || typeof meta.total_courses !== 'number') return false;
 
-  // Validate courses
   for (const course of d.courses) {
     if (!course || typeof course !== 'object') return false;
     const c = course as Record<string, unknown>;
     if (typeof c.code !== 'string' || typeof c.level !== 'string' || typeof c.class_count !== 'number') return false;
-    if (!['degree', 'diploma/certificate'].includes(c.level)) return false;
+    if (c.level !== 'degree' && c.level !== 'diploma/certificate') return false;
   }
 
-  // Validate classes
   const seenKeys = new Set<string>();
   for (const cls of d.classes) {
     if (!cls || typeof cls !== 'object') return false;
     const c = cls as Record<string, unknown>;
 
-    // Required fields
     if (typeof c.id !== 'string' || typeof c.course !== 'string') return false;
     if (typeof c.unit_name !== 'string' || typeof c.lecturer !== 'string') return false;
     if (typeof c.day !== 'string' || typeof c.start !== 'string' || typeof c.end !== 'string') return false;
@@ -51,29 +58,22 @@ export function validateTimetable(data: unknown): data is TimetableData {
     if (!Array.isArray(c.groups)) return false;
     if (typeof c.source_page !== 'number') return false;
 
-    // Optional nullable fields
     if (c.unit_code !== null && typeof c.unit_code !== 'string') return false;
     if (c.class_size !== null && typeof c.class_size !== 'number') return false;
     if (c.note !== undefined && typeof c.note !== 'string') return false;
 
-    // Validate day
     if (!['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(c.day)) return false;
-
-    // Validate mode
     if (!['Face to face', 'Online', 'Blended'].includes(c.mode)) return false;
+    if (c.level !== 'degree' && c.level !== 'diploma/certificate') return false;
 
-    // Validate level
-    if (!['degree', 'diploma/certificate'].includes(c.level)) return false;
-
-    // Validate time format (basic check)
     try {
-      parseTime(c.start as string);
-      parseTime(c.end as string);
+      const start = parseTime(c.start as string);
+      const end = parseTime(c.end as string);
+      if (end <= start) return false;
     } catch {
       return false;
     }
 
-    // Check composite key uniqueness
     const key = classKey({
       course: c.course as string,
       unit_code: c.unit_code as string | null,
@@ -121,7 +121,7 @@ export async function loadTimetable(): Promise<TimetableData> {
   return data;
 }
 
-/** Load version.json */
+/** Load version.json (cache-busted) */
 export async function loadVersion(): Promise<VersionInfo> {
   return fetchJson<VersionInfo>(`${DATA_BASE}/version.json`, true);
 }
@@ -134,7 +134,6 @@ export async function loadChanges(): Promise<ChangesData | null> {
     console.warn('Invalid changes.json, ignoring');
     return null;
   } catch {
-    // 404 or other error — changes.json is optional
     return null;
   }
 }
@@ -156,24 +155,29 @@ export function applyChanges(classes: Class[], changes: ChangesData): Class[] {
       continue;
     }
 
+    const existing = result[idx];
     if (change.cancel) {
-      // Mark as cancelled by adding a special note
       result[idx] = {
-        ...result[idx],
-        note: `CANCELLED: ${change.reason}${result[idx].note ? ` | ${result[idx].note}` : ''}`,
+        ...existing,
+        note: `CANCELLED: ${change.reason}${existing.note ? ` | ${existing.note}` : ''}`,
       };
     } else if (change.set) {
       result[idx] = {
-        ...result[idx],
+        ...existing,
         ...change.set,
-        note: `CHANGED: ${change.reason}${result[idx].note ? ` | ${result[idx].note}` : ''}`,
+        note: `CHANGED: ${change.reason}${existing.note ? ` | ${existing.note}` : ''}`,
       };
     }
   }
   return result;
 }
 
-/** Get classes for a specific course, minus hidden unit codes */
+/** Check if class is hidden by user preferences */
+export function isHidden(cls: Class, hiddenUnitCodes: string[]): boolean {
+  return cls.unit_code !== null && hiddenUnitCodes.includes(cls.unit_code);
+}
+
+/** Get classes for a course, minus hidden unit codes, sorted by day then time */
 export function getClassesForCourse(
   timetable: TimetableData,
   courseCode: string,
@@ -185,52 +189,41 @@ export function getClassesForCourse(
     .sort((a, b) => dayIndex(a.day) - dayIndex(b.day) || parseTime(a.start) - parseTime(b.start));
 }
 
-/** Check if class is hidden by user preferences */
-export function isHidden(cls: Class, hiddenUnitCodes: string[]): boolean {
-  return cls.unit_code !== null && hiddenUnitCodes.includes(cls.unit_code);
-}
-
-/** Get unique courses from timetable */
+/** Get all courses, sorted by code */
 export function getCourses(timetable: TimetableData): Course[] {
   return [...timetable.courses].sort((a, b) => a.code.localeCompare(b.code));
 }
 
-/** Get classes for today (in Africa/Nairobi timezone) */
-export function getTodaysClasses(classes: Class[]): Class[] {
-  const now = new Date();
-  // Use Africa/Nairobi timezone (UTC+3)
-  const nairobiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const today = days[nairobiTime.getDay()];
-
-  if (today === 'Saturday' || today === 'Sunday') {
-    return [];
-  }
-
-  return classes.filter((c) => c.day === today);
+/** Get classes for today (Africa/Nairobi), sorted by start time */
+export function getTodaysClasses(classes: Class[], date: Date = new Date()): Class[] {
+  const today = getNairobiDayName(date);
+  if (today === 'Saturday' || today === 'Sunday') return [];
+  return classes
+    .filter((c) => c.day === today)
+    .sort((a, b) => parseTime(a.start) - parseTime(b.start));
 }
 
-/** Get next upcoming class from a list (assumes sorted by time) */
-export function getNextClass(classes: Class[], referenceMinutes?: number): Class | null {
-  const now = referenceMinutes ?? getCurrentMinutesInNairobi();
+/** Get next/current class from a time-sorted list */
+export function getNextClass(
+  classes: Class[],
+  referenceMinutes?: number,
+  date: Date = new Date()
+): Class | null {
+  const now = referenceMinutes ?? getNairobiMinutes(date);
   return classes.find((c) => parseTime(c.end) > now) ?? null;
 }
 
-/** Get current time in minutes since midnight (Africa/Nairobi) */
-export function getCurrentMinutesInNairobi(): number {
-  const now = new Date();
-  const nairobiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
-  return nairobiTime.getHours() * 60 + nairobiTime.getMinutes();
+/** Current time in minutes since midnight (Africa/Nairobi) */
+export function getCurrentMinutesInNairobi(date: Date = new Date()): number {
+  return getNairobiMinutes(date);
 }
 
-/** Get minutes until a class starts */
-export function getMinutesUntilStart(cls: Class): number {
-  const now = getCurrentMinutesInNairobi();
-  const start = parseTime(cls.start);
-  return start - now;
+/** Minutes until a class starts (negative if already started) */
+export function getMinutesUntilStart(cls: Class, date: Date = new Date()): number {
+  return parseTime(cls.start) - getNairobiMinutes(date);
 }
 
-/** Format minutes as "Xm" or "Xh Ym" */
+/** Format minutes as "24m" / "1h 30m" / "Now" */
 export function formatMinutesUntil(mins: number): string {
   if (mins <= 0) return 'Now';
   if (mins < 60) return `${mins}m`;
@@ -239,21 +232,18 @@ export function formatMinutesUntil(mins: number): string {
   return remaining > 0 ? `${hours}h ${remaining}m` : `${hours}h`;
 }
 
-/** Group classes by day for Week view */
+/** Group classes by weekday (Mon–Fri), each day sorted by time */
 export function groupClassesByDay(classes: Class[]): Map<string, Class[]> {
   const map = new Map<string, Class[]>();
   const days: Class['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  for (const day of days) {
-    map.set(day, []);
-  }
+  for (const day of days) map.set(day, []);
 
   for (const cls of classes) {
     const dayClasses = map.get(cls.day);
     if (dayClasses) dayClasses.push(cls);
   }
 
-  // Sort each day's classes by time
   for (const dayClasses of map.values()) {
     dayClasses.sort((a, b) => parseTime(a.start) - parseTime(b.start));
   }
@@ -261,50 +251,73 @@ export function groupClassesByDay(classes: Class[]): Map<string, Class[]> {
   return map;
 }
 
-/** Detect clashes within a set of classes (same course, same day, overlapping times) */
+/**
+ * Detect overlapping classes within the given set.
+ * Classes that overlap transitively are grouped into one clash entry.
+ */
 export function detectClashes(classes: Class[]): Map<string, Class[]> {
   const clashes = new Map<string, Class[]>();
   const byDay = groupClassesByDay(classes);
 
   for (const [day, dayClasses] of byDay) {
-    for (let i = 0; i < dayClasses.length; i++) {
-      for (let j = i + 1; j < dayClasses.length; j++) {
-        const a = dayClasses[i];
-        const b = dayClasses[j];
-        const aStart = parseTime(a.start);
-        const aEnd = parseTime(a.end);
-        const bStart = parseTime(b.start);
-        const bEnd = parseTime(b.end);
+    const n = dayClasses.length;
+    const parent = Array.from({ length: n }, (_, i) => i);
 
-        // Check overlap: a starts before b ends AND b starts before a ends
-        if (aStart < bEnd && bStart < aEnd) {
-          const key = `${day}-${a.start}-${b.start}`;
-          if (!clashes.has(key)) clashes.set(key, []);
-          clashes.get(key)!.push(a, b);
-        }
+    const find = (i: number): number => {
+      let root = i;
+      while (parent[root] !== root) root = parent[root];
+      while (parent[i] !== root) {
+        const next = parent[i];
+        parent[i] = root;
+        i = next;
+      }
+      return root;
+    };
+    const union = (a: number, b: number) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra !== rb) parent[rb] = ra;
+    };
+
+    for (let i = 0; i < n; i++) {
+      const aStart = parseTime(dayClasses[i].start);
+      const aEnd = parseTime(dayClasses[i].end);
+      for (let j = i + 1; j < n; j++) {
+        const bStart = parseTime(dayClasses[j].start);
+        const bEnd = parseTime(dayClasses[j].end);
+        if (aStart < bEnd && bStart < aEnd) union(i, j);
       }
     }
-  }
 
-  // Deduplicate
-  for (const [key, list] of clashes) {
-    const unique = Array.from(new Map(list.map((c) => [classKey(c), c])).values());
-    clashes.set(key, unique);
+    const groups = new Map<number, Class[]>();
+    for (let i = 0; i < n; i++) {
+      const root = find(i);
+      if (!groups.has(root)) groups.set(root, []);
+      groups.get(root)!.push(dayClasses[i]);
+    }
+
+    for (const group of groups.values()) {
+      if (group.length > 1) {
+        const key = `${day}|${group.map((c) => classKey(c)).sort().join('|')}`;
+        clashes.set(key, group);
+      }
+    }
   }
 
   return clashes;
 }
 
-/** Search classes by query (unit name, code, lecturer, venue) */
+/** Search classes by unit name, unit code, lecturer or venue */
 export function searchClasses(classes: Class[], query: string): Class[] {
   const q = query.toLowerCase().trim();
   if (!q) return classes;
 
-  return classes.filter((c) =>
-    c.unit_name.toLowerCase().includes(q) ||
-    (c.unit_code?.toLowerCase().includes(q) ?? false) ||
-    c.lecturer.toLowerCase().includes(q) ||
-    c.venue.toLowerCase().includes(q)
+  return classes.filter(
+    (c) =>
+      c.unit_name.toLowerCase().includes(q) ||
+      (c.unit_code?.toLowerCase().includes(q) ?? false) ||
+      c.lecturer.toLowerCase().includes(q) ||
+      c.venue.toLowerCase().includes(q)
   );
 }
 
@@ -321,3 +334,18 @@ export function filterClasses(
     return true;
   });
 }
+
+/* Re-export the shared pure helpers so callers can import from one place. */
+export {
+  classKey,
+  parseTime,
+  formatTime,
+  formatTimeRange,
+  dayIndex,
+  isClassHidden,
+  getNairobiDayName,
+  getNairobiMinutes,
+  isNairobiWeekend,
+  formatNairobiDate,
+  getNextMondayDate,
+} from './types';

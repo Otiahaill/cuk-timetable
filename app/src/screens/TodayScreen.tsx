@@ -2,8 +2,22 @@
 
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
-import { loadTimetable, getClassesForCourse, getTodaysClasses, getNextClass, getCurrentMinutesInNairobi, formatTimeRange, formatMinutesUntil, detectClashes } from '../lib/data';
-import { parseTime, formatTime } from '../lib/types';
+import {
+  loadTimetable,
+  getClassesForCourse,
+  getTodaysClasses,
+  getNextClass,
+  getCurrentMinutesInNairobi,
+  formatTimeRange,
+  formatMinutesUntil,
+  detectClashes,
+  classKey,
+  parseTime,
+  formatTime,
+  isNairobiWeekend,
+  formatNairobiDate,
+  getNextMondayDate,
+} from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
 import { ClassDetailSheet } from '../components/ClassDetailSheet';
 
@@ -102,7 +116,7 @@ export function TodayScreen() {
   const todaysClasses = timetable && prefs.courseCode
     ? getTodaysClasses(
         getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes)
-      ).sort((a, b) => a.start.localeCompare(b.start))
+      )
     : [];
 
   // Get next class
@@ -110,41 +124,20 @@ export function TodayScreen() {
     ? getNextClass(todaysClasses, nowMinutes)
     : null;
 
-  // Get remaining classes (after next class)
+  // Get remaining classes (after the next/current class)
   const remainingClasses = nextClass
-    ? todaysClasses.filter((c) => c !== nextClass)
+    ? todaysClasses.filter((c) => classKey(c) !== classKey(nextClass))
     : todaysClasses;
 
   // Detect clashes
   const clashes = timetable && prefs.courseCode
     ? detectClashes(getClassesForCourse(timetable, prefs.courseCode, prefs.hiddenUnitCodes))
-    : new Map();
+    : new Map<string, Class[]>();
 
-  // Check if today is weekend
-  const now = new Date();
-  const nairobiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const todayName = days[nairobiTime.getDay()];
-  const isWeekend = todayName === 'Saturday' || todayName === 'Sunday';
-
-  // Format date header
-  const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' };
-    return date.toLocaleDateString('en-KE', options);
-  };
-
-  const dateHeader = formatDate(nairobiTime);
-
-  // Next Monday date for weekend
-  const getNextMonday = () => {
-    const d = new Date(nairobiTime);
-    const day = d.getDay();
-    const daysUntilMonday = day === 0 ? 1 : 8 - day;
-    d.setDate(d.getDate() + daysUntilMonday);
-    return d;
-  };
-
-  const nextMonday = getNextMonday();
+  // Weekend + date header (Africa/Nairobi)
+  const isWeekend = isNairobiWeekend();
+  const dateHeader = formatNairobiDate();
+  const nextMonday = getNextMondayDate();
 
   // Mode chip styles
   const modeColors: Record<string, { bg: string; text: string }> = {
@@ -346,7 +339,9 @@ export function TodayScreen() {
                 );
               } else {
                 const cls = item.data as Class;
-                const isClash = Array.from(clashes.values()).some((c) => c.some((cl) => cl.id === cls.id));
+                const isClash = Array.from(clashes.values()).some((c) =>
+                  c.some((cl) => classKey(cl) === classKey(cls))
+                );
                 return (
                   <button
                     key={`class-${cls.id}`}
@@ -397,7 +392,7 @@ export function TodayScreen() {
         isOpen={!!selectedClass}
         onClose={() => setSelectedClass(null)}
         onShare={(cls) => {
-          const text = `${cls.unit_code ? cls.unit_code + ' · ' : ''}${cls.unit_name} ${formatTimeRange(cls.start, cls.end)} at {cls.venue} — CUK Timetable`;
+          const text = `${cls.unit_code ? cls.unit_code + ' · ' : ''}${cls.unit_name} ${formatTimeRange(cls.start, cls.end)} at ${cls.venue} — CUK Timetable`;
           if (navigator.share) {
             navigator.share({ title: cls.unit_name, text }).catch(() => {});
           } else {

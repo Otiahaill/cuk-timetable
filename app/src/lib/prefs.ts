@@ -1,5 +1,7 @@
 /* Preferences management — versioned localStorage */
 
+import { useState, useCallback } from 'preact/hooks';
+
 export interface Preferences {
   courseCode: string | null;
   hiddenUnitCodes: string[];
@@ -7,29 +9,33 @@ export interface Preferences {
   dataVersion: string | null;
 }
 
-const STORAGE_KEY = 'cukt:v1:prefs';
-const DEFAULT_PREFS: Preferences = {
+export const STORAGE_KEY = 'cukt:v1:prefs';
+
+export const DEFAULT_PREFS: Preferences = {
   courseCode: null,
   hiddenUnitCodes: [],
   theme: 'system',
   dataVersion: null,
 };
 
-function readPrefs(): Preferences {
+/** Read preferences from localStorage (safe in private mode / quota errors) */
+export function readPrefs(): Preferences {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Merge with defaults to handle new fields
-      return { ...DEFAULT_PREFS, ...parsed };
+      if (parsed && typeof parsed === 'object') {
+        return { ...DEFAULT_PREFS, ...parsed };
+      }
     }
   } catch {
     // Ignore parse errors, return defaults
   }
-  return DEFAULT_PREFS;
+  return { ...DEFAULT_PREFS };
 }
 
-function writePrefs(prefs: Preferences): void {
+/** Write preferences to localStorage (safe in private mode / quota errors) */
+export function writePrefs(prefs: Preferences): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   } catch {
@@ -37,6 +43,18 @@ function writePrefs(prefs: Preferences): void {
   }
 }
 
+/** Read a single stored preference without using hooks (safe outside components) */
+export function readPref<K extends keyof Preferences>(key: K): Preferences[K] {
+  return readPrefs()[key];
+}
+
+/** Update a single stored preference without using hooks (safe outside components) */
+export function writePref<K extends keyof Preferences>(key: K, value: Preferences[K]): void {
+  const next = { ...readPrefs(), [key]: value };
+  writePrefs(next);
+}
+
+/** React hook exposing preferences plus setters */
 export function usePreferences() {
   const [prefs, setPrefs] = useState<Preferences>(() => readPrefs());
 
@@ -48,9 +66,10 @@ export function usePreferences() {
     });
   }, []);
 
-  const setCourseCode = useCallback((courseCode: string) => {
-    updatePrefs({ courseCode });
-  }, [updatePrefs]);
+  const setCourseCode = useCallback(
+    (courseCode: string) => updatePrefs({ courseCode }),
+    [updatePrefs]
+  );
 
   const toggleUnitHidden = useCallback((unitCode: string) => {
     setPrefs((prev) => {
@@ -63,13 +82,15 @@ export function usePreferences() {
     });
   }, []);
 
-  const setTheme = useCallback((theme: Preferences['theme']) => {
-    updatePrefs({ theme });
-  }, [updatePrefs]);
+  const setTheme = useCallback(
+    (theme: Preferences['theme']) => updatePrefs({ theme }),
+    [updatePrefs]
+  );
 
-  const setDataVersion = useCallback((version: string) => {
-    updatePrefs({ dataVersion: version });
-  }, [updatePrefs]);
+  const setDataVersion = useCallback(
+    (version: string) => updatePrefs({ dataVersion: version }),
+    [updatePrefs]
+  );
 
   return {
     prefs,
@@ -80,6 +101,3 @@ export function usePreferences() {
     isUnitHidden: (unitCode: string) => prefs.hiddenUnitCodes.includes(unitCode),
   };
 }
-
-// Re-export useState/useCallback for convenience
-import { useState, useCallback } from 'preact/hooks';

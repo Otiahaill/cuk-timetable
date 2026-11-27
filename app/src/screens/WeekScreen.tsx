@@ -1,8 +1,18 @@
 /* Week screen — Day chips + timeline + clash markers + week-at-a-glance per Stitch */
 
-import { useState, useEffect, useCallback, useMemo } from 'preact/hooks';
+import { useState, useEffect, useMemo } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
-import { loadTimetable, getClassesForCourse, groupClassesByDay, detectClashes, parseTime, formatTimeRange, formatTime } from '../lib/data';
+import {
+  loadTimetable,
+  getClassesForCourse,
+  groupClassesByDay,
+  detectClashes,
+  classKey,
+  parseTime,
+  formatTimeRange,
+  formatTime,
+  getNairobiDayName,
+} from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
 import { ClassDetailSheet } from '../components/ClassDetailSheet';
 
@@ -15,11 +25,8 @@ export function WeekScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>(() => {
-    const now = new Date();
-    const nairobiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = days[nairobiTime.getDay()];
-    return DAYS.includes(today as any) ? today : 'Monday';
+    const today = getNairobiDayName();
+    return (DAYS as readonly string[]).includes(today) ? today : 'Monday';
   });
   const [showGlance, setShowGlance] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
@@ -52,15 +59,8 @@ export function WeekScreen() {
     return detectClashes(classes);
   }, [timetable, prefs.courseCode, prefs.hiddenUnitCodes]);
 
-  // Get today's name for highlighting
-  const getTodayName = useCallback(() => {
-    const now = new Date();
-    const nairobiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[nairobiTime.getDay()];
-  }, []);
-
-  const todayName = getTodayName();
+  // Get today's name for highlighting (Africa/Nairobi)
+  const todayName = getNairobiDayName();
   const todayIndex = DAYS.indexOf(todayName);
 
   // Mode chip styles
@@ -70,9 +70,11 @@ export function WeekScreen() {
     Blended: { bg: 'var(--color-mode-blended-container)', text: 'var(--color-mode-blended)' },
   };
 
-  // Check if a class has a clash
+  // Check if a class has a clash (stable composite key, not the unstable id)
   const hasClash = (cls: Class) => {
-    return Array.from(clashes.values()).some((c) => c.some((cl) => cl.id === cls.id));
+    return Array.from(clashes.values()).some((c) =>
+      c.some((cl) => classKey(cl) === classKey(cls))
+    );
   };
 
   // Get classes for a specific day

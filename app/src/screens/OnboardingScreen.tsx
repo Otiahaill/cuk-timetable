@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse } from '../lib/data';
-import type { Course, Class, TimetableData } from '../lib/types';
+import type { Course, TimetableData } from '../lib/types';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -104,20 +104,6 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
     if (!unitCode) return false;
     return prefs.hiddenUnitCodes.includes(unitCode);
   };
-
-  // Proceed to next step or complete
-  const handleNextStep = useCallback(() => {
-    if (step === 1) {
-      setStep(2);
-    } else if (step === 2) {
-      if (selectedCourse) {
-        setCourseCode(selectedCourse);
-        setStep(3);
-      }
-    } else {
-      onComplete();
-    }
-  }, [step, selectedCourse, setCourseCode, onComplete]);
 
   // Progress dots
   const renderProgressDots = () => (
