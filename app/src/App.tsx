@@ -61,6 +61,9 @@ export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [courseValid, setCourseValid] = useState(true);
+  const [showUpdateToast, setShowUpdateToast] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const prefs = usePreferences();
 
   // Check if onboarding is needed on mount
@@ -85,6 +88,46 @@ export function App() {
     }
   }, [prefs.courseCode]);
 
+  // Service Worker update handling
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleUpdateReady = () => {
+      setShowUpdateToast(true);
+    };
+
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      // Show after 2nd visit
+      const visits = parseInt(localStorage.getItem('cukt:visits') || '0', 10);
+      if (visits >= 1) {
+        setShowInstallPrompt(true);
+      }
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
+    };
+
+    window.addEventListener('cukt:sw-update-ready', handleUpdateReady);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('cukt:sw-update-ready', handleUpdateReady);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  // Track visits for install prompt timing
+  useEffect(() => {
+    const visits = parseInt(localStorage.getItem('cukt:visits') || '0', 10);
+    localStorage.setItem('cukt:visits', String(visits + 1));
+  }, []);
+
   const renderScreen = useCallback(() => {
     switch (activeTab) {
       case 'today': return <TodayScreen />;
@@ -93,6 +136,26 @@ export function App() {
       case 'settings': return <SettingsScreen />;
     }
   }, [activeTab]);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        setShowInstallPrompt(false);
+      }
+      setDeferredPrompt(null);
+    }
+  };
+
+  const handleDismissInstall = () => {
+    setShowInstallPrompt(false);
+    localStorage.setItem('cukt:a2hs_dismissed', 'true');
+  };
+
+  const handleReload = () => {
+    window.location.reload();
+  };
 
   if (showOnboarding) {
     return (
@@ -124,6 +187,44 @@ export function App() {
           </button>
         ))}
       </nav>
+
+      {/* Update Toast */}
+      {showUpdateToast && (
+        <div className="fixed bottom-[calc(var(--tab-bar-height) + 16px)] left-16 right-16 max-w-[430px] mx-auto z-50 animate-slide-up" role="alert" aria-live="polite">
+          <div className="flex items-center justify-between p-gutter-md rounded-lg bg-primary text-on-primary shadow-lg">
+            <span className="font-body text-body-md">New version ready</span>
+            <div className="flex gap-gutter-sm">
+              <button onClick={handleDismissInstall} className="btn btn-ghost text-label-sm text-on-primary">Later</button>
+              <button onClick={handleReload} className="btn btn-primary text-label-sm">Reload</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* A2HS Install Prompt */}
+      {showInstallPrompt && !showUpdateToast && (
+        <div className="fixed bottom-[calc(var(--tab-bar-height) + 16px)] left-16 right-16 max-w-[430px] mx-auto z-50 animate-slide-up" role="dialog" aria-label="Install app">
+          <div className="p-gutter-md rounded-lg bg-surface border border-outline shadow-lg">
+            <div className="flex items-center gap-gutter-sm mb-gutter-sm">
+              <span className="material-symbols-outlined text-primary" aria-hidden="true">download</span>
+              <span className="font-title text-title-md text-on-surface">Install CampusPulse</span>
+            </div>
+            <p className="font-body text-body-sm text-on-surface-variant mb-gutter-md">
+              Add to Home screen for offline access and faster loads.
+            </p>
+            <div className="flex gap-gutter-sm">
+              <button onClick={handleDismissInstall} className="btn btn-ghost flex-1 text-label-md">Not now</button>
+              <button onClick={handleInstall} className="btn btn-primary flex-1 text-label-md">Install</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
+}
+
+// Type for beforeinstallprompt event
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
