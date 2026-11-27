@@ -22,7 +22,7 @@ import {
   getCourses,
 } from './data';
 
-import type { TimetableData, Class } from './types';
+import type { TimetableData, Class, ChangesData } from './types';
 
 const mockClass: Class = {
   id: 'cls_001',
@@ -165,24 +165,42 @@ describe('Timetable validation', () => {
     expect(validateTimetable({ ...mockTimetable, meta: undefined })).toBe(false);
   });
 
+  it('rejects a missing courses array', () => {
+    expect(validateTimetable({ ...mockTimetable, courses: undefined })).toBe(false);
+  });
+
+  it('rejects a missing classes array', () => {
+    expect(validateTimetable({ ...mockTimetable, classes: undefined })).toBe(false);
+  });
+
+  it('rejects a null array', () => {
+    expect(validateTimetable({ ...mockTimetable, classes: null })).toBe(false);
+  });
+
   it('rejects invalid course', () => {
     expect(
       validateTimetable({
         ...mockTimetable,
-        courses: [{ code: 'X', level: 'invalid', class_count: 1 }],
+        courses: [{ code: 'X', level: 'invalid' as 'degree', class_count: 1 }],
       })
     ).toBe(false);
   });
 
   it('rejects invalid class day', () => {
     expect(
-      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, day: 'Someday' }] })
+      validateTimetable({
+        ...mockTimetable,
+        classes: [{ ...mockClass, day: 'Someday' as Class['day'] }],
+      })
     ).toBe(false);
   });
 
   it('rejects invalid mode', () => {
     expect(
-      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, mode: 'Hybrid' }] })
+      validateTimetable({
+        ...mockTimetable,
+        classes: [{ ...mockClass, mode: 'Hybrid' as Class['mode'] }],
+      })
     ).toBe(false);
   });
 
@@ -192,12 +210,33 @@ describe('Timetable validation', () => {
     ).toBe(false);
   });
 
+  it('rejects a non-string time', () => {
+    expect(
+      validateTimetable({
+        ...mockTimetable,
+        classes: [{ ...mockClass, start: 700 as unknown as string }],
+      })
+    ).toBe(false);
+  });
+
   it('rejects end time before start time', () => {
     expect(
       validateTimetable({
         ...mockTimetable,
         classes: [{ ...mockClass, start: '10:00AM', end: '7:00AM' }],
       })
+    ).toBe(false);
+  });
+
+  it('rejects an invalid hour', () => {
+    expect(
+      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, start: '13:00AM' }] })
+    ).toBe(false);
+  });
+
+  it('rejects an invalid minute', () => {
+    expect(
+      validateTimetable({ ...mockTimetable, classes: [{ ...mockClass, start: '7:60AM' }] })
     ).toBe(false);
   });
 
@@ -217,7 +256,7 @@ describe('Timetable validation', () => {
 });
 
 describe('Changes validation', () => {
-  const validChanges = {
+  const validChanges: ChangesData = {
     version: 'r1',
     updated: '2026-11-27',
     changes: [
@@ -241,20 +280,32 @@ describe('Changes validation', () => {
   });
 
   it('rejects missing fields', () => {
-    expect(validateChanges({ ...validChanges, changes: [{ match: {}, reason: '', date: '' }] })).toBe(
-      false
-    );
+    expect(
+      validateChanges({
+        ...validChanges,
+        changes: [
+          {
+            match: {} as ChangesData['changes'][number]['match'],
+            reason: '',
+            date: '',
+          },
+        ],
+      })
+    ).toBe(false);
   });
 
   it('rejects invalid cancel type', () => {
     expect(
-      validateChanges({ ...validChanges, changes: [{ ...validChanges.changes[0], cancel: 'yes' }] })
+      validateChanges({
+        ...validChanges,
+        changes: [{ ...validChanges.changes[0], cancel: 'yes' as unknown as boolean }],
+      })
     ).toBe(false);
   });
 });
 
 describe('Apply changes', () => {
-  const changes = {
+  const changes: ChangesData = {
     version: 'r1',
     updated: '2026-11-27',
     changes: [
@@ -495,7 +546,7 @@ describe('Search', () => {
 
 describe('Filter', () => {
   it('filters by mode', () => {
-    const mixed = [mockClass, { ...mockClass, id: 'c2', mode: 'Online' as const }];
+    const mixed: Class[] = [mockClass, { ...mockClass, id: 'c2', mode: 'Online' }];
     expect(filterClasses(mixed, { mode: 'Face to face' }).length).toBe(1);
   });
 
@@ -512,10 +563,10 @@ describe('Filter', () => {
   });
 
   it('combines filters (AND)', () => {
-    const mixed = [
-      { ...mockClass, id: 'c1', mode: 'Face to face' as const, day: 'Monday' as const },
-      { ...mockClass, id: 'c2', mode: 'Online' as const, day: 'Monday' as const },
-      { ...mockClass, id: 'c3', mode: 'Face to face' as const, day: 'Tuesday' as const },
+    const mixed: Class[] = [
+      { ...mockClass, id: 'c1', mode: 'Face to face', day: 'Monday' },
+      { ...mockClass, id: 'c2', mode: 'Online', day: 'Monday' },
+      { ...mockClass, id: 'c3', mode: 'Face to face', day: 'Tuesday' },
     ];
     expect(filterClasses(mixed, { mode: 'Face to face', day: 'Monday' }).length).toBe(1);
   });

@@ -65,7 +65,7 @@ export function App() {
   const [showUpdateToast, setShowUpdateToast] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const prefs = usePreferences();
+  const { prefs } = usePreferences();
 
   // Check if onboarding is needed on mount
   useEffect(() => {

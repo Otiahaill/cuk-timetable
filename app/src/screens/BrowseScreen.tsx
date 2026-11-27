@@ -1,7 +1,6 @@
 /* Browse screen — Search + filter chips + results per Stitch */
 
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import type { JSX } from 'preact';
 import { usePreferences } from '../lib/prefs';
 import { loadTimetable, getClassesForCourse, searchClasses, filterClasses, parseTime, formatTimeRange, formatTime } from '../lib/data';
 import type { Class, TimetableData } from '../lib/types';
@@ -124,7 +123,7 @@ export function BrowseScreen() {
       <div className="flex gap-gutter-sm overflow-x-auto pb-gutter-xs" role="group" aria-label={`${label} filters`}>
         {options.map((option) => {
           const isActive = selectedFilters[type] === option;
-          let chipStyle: JSX.CSSProperties = {};
+          let chipStyle: Record<string, string> = {};
 
           if (type === 'mode') {
             const colors = modeColors[option] || { bg: 'var(--color-surface-container)', text: 'var(--color-on-surface)' };
@@ -195,7 +194,7 @@ export function BrowseScreen() {
             type="search"
             placeholder="Search unit, code, lecturer, venue…"
             value={searchQuery}
-            onInput={(e) => setSearchQuery(e.target.value)}
+            onInput={(e) => setSearchQuery(e.currentTarget.value)}
             className="w-full bg-transparent border-0 p-0 text-body-md text-on-surface placeholder:text-outline focus:ring-0"
             aria-label="Search classes"
           />

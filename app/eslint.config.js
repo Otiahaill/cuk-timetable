@@ -35,5 +35,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
+  {
+    // Test fixtures deliberately contain invalid values to exercise the validator.
+    files: ['src/lib/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
   prettier
 );

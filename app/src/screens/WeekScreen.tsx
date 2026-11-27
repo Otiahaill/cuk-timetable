@@ -61,7 +61,7 @@ export function WeekScreen() {
 
   // Get today's name for highlighting (Africa/Nairobi)
   const todayName = getNairobiDayName();
-  const todayIndex = DAYS.indexOf(todayName);
+  const todayIndex = (DAYS as readonly string[]).indexOf(todayName);
 
   // Mode chip styles
   const modeColors: Record<string, { bg: string; text: string }> = {

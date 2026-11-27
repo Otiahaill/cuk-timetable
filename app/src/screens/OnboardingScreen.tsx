@@ -140,7 +140,7 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
 
   // Step 1: Course Search
   const renderStep1 = () => (
-    <main id="step-1" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg" role="step" aria-labelledby="step1-title">
+    <main id="step-1" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg" role="group" aria-labelledby="step1-title">
       <div className="flex flex-col gap-gutter-xs">
         <h1 id="step1-title" className="font-headline text-headline-lg text-on-surface text-balance">
           {recovery ? 'Pick your course again' : 'Pick your course'}
@@ -167,7 +167,7 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
           aria-label="Search your course"
           placeholder="Search BCHM1.1..."
           value={searchQuery}
-          onInput={(e) => setSearchQuery(e.target.value)}
+          onInput={(e) => setSearchQuery(e.currentTarget.value)}
           className="w-full bg-transparent border-0 p-0 text-body-md text-on-surface placeholder:text-outline focus:ring-0"
         />
       </form>
@@ -227,7 +227,7 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
 
   // Step 2: Unit Checkboxes
   const renderStep2 = () => (
-    <main id="step-2" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg" role="step" aria-labelledby="step2-title">
+    <main id="step-2" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg" role="group" aria-labelledby="step2-title">
       <div className="flex flex-col gap-gutter-xs">
         <h1 id="step2-title" className="font-headline text-headline-lg text-on-surface text-balance">
           Tick your units
@@ -263,7 +263,7 @@ export function OnboardingScreen({ onComplete, recovery = false }: OnboardingScr
 
   // Step 3: Success
   const renderStep3 = () => (
-    <main id="step-3" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg text-center" role="step" aria-labelledby="step3-title">
+    <main id="step-3" className="flex-1 flex flex-col justify-center gap-gutter-lg py-gutter-lg text-center" role="group" aria-labelledby="step3-title">
       <div className="w-[56px] h-[56px] rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mx-auto">
         <span className="material-symbols-outlined text-[28px]" aria-hidden="true">check</span>
       </div>

@@ -9,6 +9,7 @@ import {
   DEFAULT_PREFS,
   STORAGE_KEY,
 } from './prefs';
+import type { Preferences } from './prefs';
 
 const mockStorage: Record<string, string> = {};
 
@@ -76,7 +77,12 @@ describe('readPrefs', () => {
 
 describe('writePrefs', () => {
   it('writes prefs to localStorage', () => {
-    const prefs = { courseCode: 'BCHM1.1', hiddenUnitCodes: [], theme: 'light', dataVersion: 'v1' };
+    const prefs: Preferences = {
+      courseCode: 'BCHM1.1',
+      hiddenUnitCodes: [],
+      theme: 'light',
+      dataVersion: 'v1',
+    };
     writePrefs(prefs);
     expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, JSON.stringify(prefs));
   });
